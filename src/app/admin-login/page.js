@@ -8,7 +8,7 @@ export default function AdminLogin() {
   const handleSubmit = (e) => {
     e.preventDefault()
     // Add your authentication logic here
-    router.push('/master-admin/users-list')
+    router.push('/admin/users-list')
   }
 
   return (

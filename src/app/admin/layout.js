@@ -1,6 +1,7 @@
+
 'use client';
 import { Inter } from 'next/font/google';
-import Sidebar from '@/components/SuperSidebar';
+import Sidebar from '@/components/Sidebar';
 import { useState } from 'react';
 import { FiBell, FiUser } from 'react-icons/fi';
 import Image from 'next/image';
@@ -10,7 +11,7 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-export default function SuperMasterAdminLayout({ children }) {
+export default function MasterAdminLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false); // State to toggle between image and icon
 
@@ -45,7 +46,7 @@ export default function SuperMasterAdminLayout({ children }) {
               )}
             </div>
             <span className="text-[20px] font-bold text-[#64748B]">
-              Welcome back, Master Admin 👋
+              Welcome back, Admin 👋
             </span>
           </div>
           <div className="flex items-center">

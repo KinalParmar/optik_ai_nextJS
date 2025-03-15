@@ -11,6 +11,9 @@ module.exports = {
       colors: {
         primary: "#007BFF",
         'primary-hover': "#0056b3",
+        lavender: {
+          200: '#DDDAFA', // Matches the header color
+        },
       },
     },
   },

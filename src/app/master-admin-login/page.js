@@ -8,7 +8,7 @@ export default function SuperAdminLogin() {
   const handleSubmit = (e) => {
     e.preventDefault()
     // Add your authentication logic here
-    router.push('/super-master-admin/users-list')
+    router.push('/master-admin/home')
   }
 
   return (
@@ -26,7 +26,7 @@ export default function SuperAdminLogin() {
         
         <div className="bg-white rounded-lg p-8">
           <h1 className="text-[22px] font-semibold text-center mb-8 text-gray-900">
-            Super Admin Login
+            Master Admin Login
           </h1>
           
           <form className="space-y-5" onSubmit={handleSubmit}>

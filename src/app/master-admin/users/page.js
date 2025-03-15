@@ -307,7 +307,7 @@ export default function Users() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRoles(user)}
-                          className="p-1.5 text-[green] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
+                          className="p-1.5 text-[#22C55E] hover:bg-[#22C55E] hover:bg-opacity-10 rounded transition-colors duration-200 text-[12px] font-bold"
                           title="Edit Roles"
                         >
                           ROLES
