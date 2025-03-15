@@ -1,59 +1,64 @@
-'use client'
-import Image from 'next/image'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { HiOutlineUserGroup } from 'react-icons/hi'
-import { TbArrowGuide } from 'react-icons/tb'
-import { BiBarChartAlt2 } from 'react-icons/bi'
-import { BsSpeedometer2 } from 'react-icons/bs'
-import { MdOutlineInsights } from 'react-icons/md'
+'use client';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { HiOutlineHome } from 'react-icons/hi';
+import { HiOutlineUserGroup } from 'react-icons/hi';
+import { FiUserPlus } from 'react-icons/fi';
+
+// Import Poppins font from Google Fonts
+import { Poppins } from 'next/font/google';
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'], // Regular, medium, and semi-bold weights
+  variable: '--font-poppins',
+});
 
 const sidebarItems = [
-  { title: 'Leads', link: '/master-admin/users-list', icon: HiOutlineUserGroup },
-  { title: 'New Lead', link: '/master-admin/new-lead', icon: HiOutlineUserGroup },
-  { title: 'User', link: '/master-admin/users', icon: HiOutlineUserGroup },
+  { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup },
+  { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus },
+  { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup },
   // { title: 'Flows', link: '/master-admin/flows', icon: TbArrowGuide },
   // { title: 'Campaigns', link: '/master-admin/campaigns', icon: BiBarChartAlt2 },
   // { title: 'GTM Hub', link: '/master-admin/gtm-hub', icon: BsSpeedometer2 },
   // { title: 'Insights', link: '/master-admin/insights', icon: MdOutlineInsights }
 ]
-
 export default function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
-    <div className="w-[240px] h-screen bg-white fixed left-0 top-0 border-r border-[#E2E8F0] flex flex-col">
-      <div className="px-6 py-10 border-b border-[#E2E8F0] flex justify-center items-center">
+    <div className={`${poppins.variable} w-[260px] h-screen bg-gradient-to-b from-[#F9F9FF] to-white fixed left-0 top-0 border-r border-[#E2E8F0] flex flex-col shadow-lg`}>
+      <div className="px-6 py-8 border-b border-[#E2E8F0] flex justify-center items-center">
         <Image
           src="/optik-logo.png"
           alt="Optik Logo"
-          width={140}
-          height={40}
+          width={150}
+          height={50}
           priority
-          className=""
+          className="object-contain"
         />
       </div>
 
-      <ul className="mt-6 space-y-1">
+      <nav className="mt-8 px-4 space-y-2">
         {sidebarItems.map((item, index) => {
-          const Icon = item.icon
+          const Icon = item.icon;
           return (
-            <li key={index}>
-              <Link 
-                href={item.link}
-                className={`flex items-center px-6 py-3 text-[14px] hover:bg-[#F8FAFF] transition-colors duration-200 relative
-                  ${pathname === item.link ? 'text-[#007BFF] bg-[#F8FAFF] font-medium' : 'text-[#64748B] hover:text-[#007BFF]'}`}
-              >
-                {pathname === item.link && (
-                  <span className="absolute left-0 w-[2px] h-full bg-[#007BFF]"></span>
-                )}
-                <Icon className="w-[18px] h-[18px] mr-3.5" />
-                <span className="font-medium">{item.title}</span>
-              </Link>
-            </li>
-          )
+            <Link
+              key={index}
+              href={item.link}
+              className={`flex items-center px-5 py-3 rounded-lg text-[14px] hover:bg-[#E6E8F5] transition-all duration-200 relative
+                ${pathname === item.link ? 'text-[#007BFF] bg-[#E6E8F5] font-semibold' : 'text-[#64748B] hover:text-[#007BFF]'}`}
+            >
+              {pathname === item.link && (
+                <span className="absolute left-0 w-1 h-full bg-[#007BFF] rounded-r-lg"></span>
+              )}
+              <Icon className="w-5 h-5 mr-4" />
+              <span className="font-medium">{item.title}</span>
+            </Link>
+          );
         })}
-      </ul>
+      </nav>
     </div>
-  )
+  );
 }

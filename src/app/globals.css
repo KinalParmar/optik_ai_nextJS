@@ -9,7 +9,7 @@
 
 @layer base {
   body {
-    @apply text-gray-900 bg-gray-50;
+    @apply text-gray-900 bg-[#DDDAFA];
   }
 }
 
