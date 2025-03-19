@@ -1,7 +1,16 @@
-'use client'
-import { useState } from 'react'
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'
+// import { useLocation, useNavigate } from 'react-router-dom'; // For navigation and receiving data
+import { createLead, updateLead, generateSummary } from '@/src/Services/Master-Admin/Lead';
+import { Router } from 'next/router';
+// import { toast } from 'react-toastify';
 
 export default function NewLead() {
+  const router = useRouter()
+  // const location = useLocation();
+  const leadToEdit = location.state?.lead || null; // Get lead data if passed via navigation
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -15,7 +24,30 @@ export default function NewLead() {
     territory: '',
     tenureInRole: '',
     jobRoleDescription: ''
-  })
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Populate form if editing
+  useEffect(() => {
+    if (leadToEdit) {
+      setIsEditing(true);
+      setFormData({
+        firstName: leadToEdit.name.split(' ')[0] || '',
+        lastName: leadToEdit.name.split(' ')[1] || '',
+        linkedinUrl: leadToEdit.linkedin || '',
+        email: leadToEdit.email || '',
+        jobTitle: leadToEdit.jobTitle || '',
+        company_name: leadToEdit.company || '',
+        company_linkedin: '',
+        phoneNumber: '',
+        industry: '',
+        territory: '',
+        tenureInRole: '',
+        jobRoleDescription: leadToEdit.summary || ''
+      });
+    }
+  }, [leadToEdit]);
 
   const isFormValid = () => {
     return (
@@ -26,26 +58,62 @@ export default function NewLead() {
       formData.jobTitle &&
       formData.company_name &&
       formData.company_linkedin
-    )
-  }
+    );
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Handle form submission
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isFormValid()) {
+      console.error('Please fill all required fields!');
+      return;
+    }
+
+    const leadData = {
+      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      linkedin: formData.linkedinUrl,
+      email: formData.email,
+      jobTitle: formData.jobTitle,
+      company: formData.company_name,
+      company_linkedin: formData.company_linkedin,
+      phoneNumber: formData.phoneNumber || null,
+      industry: formData.industry || null,
+      territory: formData.territory || null,
+      tenureInRole: formData.tenureInRole || null,
+      summary: formData.jobRoleDescription || null
+    };
+
+    try {
+      let leadResponse;
+      if (isEditing) {
+        // Update existing lead
+        leadResponse = await updateLead(leadToEdit.id, leadData);
+      } else {
+        // Create new lead
+        leadResponse = await createLead(leadData);
+      }
+
+      // Generate summary for the lead
+      const summaryResponse = await generateSummary(leadResponse.data.id);
+
+      // Redirect to UsersList page
+      router.push('/users-list');
+    } catch (error) {
+      console.error(isEditing ? 'Failed to update lead!' : 'Failed to create lead!');
+    }
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
+    }));
+  };
 
   return (
     <section className="p-8 max-w-[1400px] mx-auto">
       <div className="mb-6">
-        <h1 className="text-[20px] font-semibold text-[#334155]">Add Leads</h1>
+        <h1 className="text-[20px] font-semibold text-[#334155]">{isEditing ? 'Edit Lead' : 'Add Leads'}</h1>
       </div>
 
       <div className="bg-white rounded-[4px] border border-[#E2E8F0] p-8">
@@ -243,15 +311,15 @@ export default function NewLead() {
             <button
               type="submit"
               disabled={!isFormValid()}
-              className={`min-w-[120px] px-6 py-2.5 text-[13px] font-medium text-white rounded-[10px] transition-all duration-200 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] ${isFormValid() 
-                ? 'hover:opacity-90 cursor-pointer' 
-                : 'opacity-50 cursor-not-allowed'}`}
+              className={`min-w-[120px] px-6 py-2.5 text-[13px] font-medium text-white rounded-[10px] transition-all duration-200 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] ${
+                isFormValid() ? 'hover:opacity-90 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+              }`}
             >
-              Create Lead
+              {isEditing ? 'Update Lead' : 'Create Lead'}
             </button>
           </div>
         </form>
       </div>
     </section>
-  )
+  );
 }

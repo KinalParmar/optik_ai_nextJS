@@ -1,9 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FiSearch, FiEye } from 'react-icons/fi';
 import { BiUpload } from 'react-icons/bi';
 import { HiOutlineExternalLink } from 'react-icons/hi';
 import { FiArrowLeft } from 'react-icons/fi'; // Added for modal back button
+import axiosInstance from '@/src/Interceptor/Interceptor';
+import { getAllLead } from '@/src/Services/Master-Admin/Lead';
 
 export default function UsersList() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,25 +15,25 @@ export default function UsersList() {
 
   // Mock data for leads (you can replace this with your actual data)
   const leads = [
-    { 
-      id: 1, 
-      name: 'John Doe', 
-      email: 'john@example.com', 
-      jobTitle: 'Developer', 
-      company: 'Tech Corp', 
-      linkedin: 'https://linkedin.com/in/johndoe', 
-      summary: 'Experienced developer with 5 years in tech.', 
-      createdAt: '2025-03-01' 
+    {
+      id: 1,
+      name: 'John Doe',
+      email: 'john@example.com',
+      jobTitle: 'Developer',
+      company: 'Tech Corp',
+      linkedin: 'https://linkedin.com/in/johndoe',
+      summary: 'Experienced developer with 5 years in tech.',
+      createdAt: '2025-03-01'
     },
-    { 
-      id: 2, 
-      name: 'Jane Smith', 
-      email: 'jane@example.com', 
-      jobTitle: 'Manager', 
-      company: 'Inno Ltd', 
-      linkedin: 'https://linkedin.com/in/janesmith', 
-      summary: 'Manager with expertise in team leadership.', 
-      createdAt: '2025-03-02' 
+    {
+      id: 2,
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      jobTitle: 'Manager',
+      company: 'Inno Ltd',
+      linkedin: 'https://linkedin.com/in/janesmith',
+      summary: 'Manager with expertise in team leadership.',
+      createdAt: '2025-03-02'
     },
   ];
 
@@ -50,15 +52,30 @@ export default function UsersList() {
     lead.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  useEffect(() => {
+    allLeads();
+  }, []);
+
+  const allLeads = async () => {
+    try {
+      const response = await getAllLead();
+      if (response) {
+        setLeads(response.data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   return (
     <section className="px-8 py-6 max-w-[1400px] mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-[20px] font-bold text-[#334155]">Lead Management</h1>
-        
+
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B] w-3.5 h-3.5" />
-            <input 
+            <input
               type="text"
               placeholder="Search..."
               className="pl-8 pr-3 py-[7px] rounded-[4px] border border-[#E2E8F0] w-[200px] text-[13px] font-bold focus:outline-none focus:border-[#6366F1] placeholder-[#64748B]"
@@ -66,12 +83,12 @@ export default function UsersList() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <button className="flex items-center gap-1.5 px-3 py-[7px] rounded-[4px] bg-white border border-[#E2E8F0] text-[#64748B] hover:bg-[#F4F4FF] hover:text-[#6366F1] hover:border-[#6366F1] transition-colors duration-200 text-[13px] font-bold">
             <BiUpload className="w-3.5 h-3.5" />
             <span>Upload Leads</span>
           </button>
-          
+
           <button className="px-3 py-[7px] rounded-[4px] bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white hover:opacity-90 transition-all duration-200 text-[13px] font-bold">
             Download Dummy CSV
           </button>
@@ -132,7 +149,7 @@ export default function UsersList() {
                 <td colSpan="8" className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center text-[#64748B]">
                     <svg width="48" height="31" viewBox="0 0 64 41" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5.33333 0C2.388 0 0 2.388 0 5.33333V34.6667C0 37.612 2.388 40 5.33333 40H58.6667C61.612 40 64 37.612 64 34.6667V5.33333C64 2.388 61.612 0 58.6667 0H5.33333ZM5.33333 5.33333H58.6667V34.6667H5.33333V5.33333ZM13.3333 10.6667V16H18.6667V10.6667H13.3333ZM24 10.6667V16H29.3333V10.6667H24ZM34.6667 10.6667V16H40V10.6667H34.6667ZM13.3333 21.3333V26.6667H18.6667V21.3333H13.3333ZM24 21.3333V26.6667H29.3333V21.3333H24ZM34.6667 21.3333V26.6667H40V21.3333H34.6667Z" fill="#E2E8F0"/>
+                      <path d="M5.33333 0C2.388 0 0 2.388 0 5.33333V34.6667C0 37.612 2.388 40 5.33333 40H58.6667C61.612 40 64 37.612 64 34.6667V5.33333C64 2.388 61.612 0 58.6667 0H5.33333ZM5.33333 5.33333H58.6667V34.6667H5.33333V5.33333ZM13.3333 10.6667V16H18.6667V10.6667H13.3333ZM24 10.6667V16H29.3333V10.6667H24ZM34.6667 10.6667V16H40V10.6667H34.6667ZM13.3333 21.3333V26.6667H18.6667V21.3333H13.3333ZM24 21.3333V26.6667H29.3333V21.3333H24ZM34.6667 21.3333V26.6667H40V21.3333H34.6667Z" fill="#E2E8F0" />
                     </svg>
                     <p className="mt-3 text-[13px] font-bold">No leads found</p>
                     <p className="text-[11px] mt-1 font-bold">Upload leads using CSV or add them manually</p>
@@ -143,14 +160,14 @@ export default function UsersList() {
           </tbody>
         </table>
       </div>
-      
+
       {selectedLead && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h4 className="text-xl font-extrabold text-[#334155]">Customer Info</h4>
-                <button 
+                <button
                   onClick={() => setSelectedLead(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -206,9 +223,9 @@ export default function UsersList() {
                   <div className="pb-2 border-b border-[#EEEEEE]">
                     <strong className="text-[#334155] font-extrabold">Summary:</strong>
                     <p className="mt-2 whitespace-pre-wrap">{selectedLead.summary || '-'}</p>
-                    <button 
+                    <button
                       className="mt-4 px-4 py-2 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white rounded hover:opacity-90 transition-all duration-200 text-sm font-bold"
-                      onClick={() => {}}
+                      onClick={() => { }}
                     >
                       Regenerate
                     </button>
@@ -254,7 +271,7 @@ export default function UsersList() {
                     id={name}
                     name={name}
                     checked={false} // Default to unchecked; adjust based on your logic
-                    onChange={() => {}} // Add logic if needed
+                    onChange={() => { }} // Add logic if needed
                     className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                   />
                   <label htmlFor={name} className="text-sm font-medium text-gray-700 cursor-pointer">

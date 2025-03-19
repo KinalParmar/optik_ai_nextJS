@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FiPlus, FiEye, FiEdit2, FiTrash2, FiArrowLeft } from 'react-icons/fi';
+import { getAllCompany } from '@/src/Services/Master-Admin/Home';
 
 export default function Home() {
   const [showForm, setShowForm] = useState(false);
@@ -8,22 +9,33 @@ export default function Home() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [companyToDelete, setCompanyToDelete] = useState(null);
-  const [companies, setCompanies] = useState([
-    { id: 1, name: "Tech Corp", regNo: "12345", email: "tech@corp.com", address: "123 Tech St", pincode: "123456" },
-    { id: 2, name: "Inno Ltd", regNo: "67890", email: "info@innoltd.com", address: "456 Inno Ave", pincode: "654321" },
-  ]);
+  const [companies, setCompanies] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     regNo: '',
     email: '',
     address: '',
-    pincode: ''
+    pincode: '',
+    adminName: '',
+    adminEmail: '',
+    adminPassword: '',
+    isAdmin: false,
+    totalUsersAllowed: 0,
+    isEnabled: false,
+    paymentStatus: '',
+    paymentAmount: 0,
+    nextPaymentDate: ''
   });
   const [notifications, setNotifications] = useState(["New company added successfully!"]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleChange = (e) => {
+    const { name, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
   const handleSubmit = (e) => {
@@ -33,7 +45,22 @@ export default function Home() {
       ...formData
     };
     setCompanies([...companies, newCompany]);
-    setFormData({ name: '', regNo: '', email: '', address: '', pincode: '' });
+    setFormData({
+      name: '',
+      regNo: '',
+      email: '',
+      address: '',
+      pincode: '',
+      adminName: '',
+      adminEmail: '',
+      adminPassword: '',
+      isAdmin: false,
+      totalUsersAllowed: 0,
+      isEnabled: false,
+      paymentStatus: 'Pending',
+      paymentAmount: 0,
+      nextPaymentDate: ''
+    });
     setShowForm(false);
     setNotifications([`Company ${formData.name} added successfully!`, ...notifications.slice(0, 2)]);
   };
@@ -59,6 +86,19 @@ export default function Home() {
     setCompanyToDelete(null);
   };
 
+  useEffect(() => {
+    getAllCompanyDetails();
+  }, []);
+
+  const getAllCompanyDetails = async () => {
+    try {
+      const response = await getAllCompany();
+      setCompanies(response.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
+
   return (
     <div className="flex-1 p-8 bg-gray-50 min-h-screen">
       {/* Stats Cards with Transparent Lavender Background */}
@@ -72,7 +112,7 @@ export default function Home() {
           <div
             key={index}
             className="bg-[#DDDAFA] bg-opacity-50 rounded-lg p-6 text-center border border-[#DDDAFA] shadow-sm hover:shadow-md transition-shadow duration-300"
-            style={{ backdropFilter: 'blur(5px)' }} // Adds a slight blur effect for transparency
+            style={{ backdropFilter: 'blur(5px)' }}
           >
             <div className="text-xl mb-2 text-gray-400">{card.icon}</div>
             <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{card.title}</h3>
@@ -130,16 +170,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Notifications with Simple Design */}
-      <div className="mt-10">
-        <h3 className="text-lg font-medium text-gray-800 mb-3">Notifications</h3>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 max-h-32 overflow-y-auto">
-          {notifications.map((notif, index) => (
-            <div key={index} className="text-sm text-gray-600 mb-2">{notif}</div>
-          ))}
-        </div>
-      </div>
-
       {/* View Company Modal */}
       {showViewModal && selectedCompany && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -147,7 +177,7 @@ export default function Home() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h4 className="text-xl font-extrabold text-[#334155]">Company Info</h4>
-                <button 
+                <button
                   onClick={() => setShowViewModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -177,6 +207,42 @@ export default function Home() {
                     <strong className="text-[#334155] font-extrabold">Pincode:</strong>{' '}
                     {selectedCompany.pincode || '-'}
                   </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Admin Name:</strong>{' '}
+                    {selectedCompany.adminName || '-'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Admin Email:</strong>{' '}
+                    {selectedCompany.adminEmail || '-'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Admin Password:</strong>{' '}
+                    {selectedCompany.adminPassword || '-'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Is Admin:</strong>{' '}
+                    {selectedCompany.isAdmin ? 'Yes' : 'No'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Total Users Allowed:</strong>{' '}
+                    {selectedCompany.totalUsersAllowed || '0'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Is Enabled:</strong>{' '}
+                    {selectedCompany.isEnabled ? 'Yes' : 'No'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Payment Status:</strong>{' '}
+                    {selectedCompany.paymentStatus || '-'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Payment Amount:</strong>{' '}
+                    ${selectedCompany.paymentAmount || '0'}
+                  </p>
+                  <p className="pb-2 border-b border-[#EEEEEE]">
+                    <strong className="text-[#334155] font-extrabold">Next Payment Date:</strong>{' '}
+                    {selectedCompany.nextPaymentDate || '-'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -184,11 +250,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* New Company Form with Minimalist Styling */}
+      {/* New Company Form with Scrollable Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h3 className="text-lg font-medium text-gray-800 mb-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-medium text-gray-800 mb-4 top-0 bg-white z-10">
               {formData.id ? 'Edit Company' : 'Add New Company'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -204,7 +270,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Register No</label>
+                <label className="block text-sm font-medium text-gray-700">Registration No</label>
                 <input
                   type="text"
                   name="regNo"
@@ -247,7 +313,108 @@ export default function Home() {
                   required
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Admin Name</label>
+                <input
+                  type="text"
+                  name="adminName"
+                  value={formData.adminName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Admin Email</label>
+                <input
+                  type="email"
+                  name="adminEmail"
+                  value={formData.adminEmail}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Admin Password</label>
+                <input
+                  type="password"
+                  name="adminPassword"
+                  value={formData.adminPassword}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Is Admin</label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isAdmin"
+                    checked={formData.isAdmin}
+                    onChange={handleToggleChange}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Total Users Allowed</label>
+                <input
+                  type="number"
+                  name="totalUsersAllowed"
+                  value={formData.totalUsersAllowed}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Is Enabled</label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isEnabled"
+                    checked={formData.isEnabled}
+                    onChange={handleToggleChange}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Payment Status</label>
+                <input
+                  type="text"
+                  name="paymentStatus"
+                  value={formData.paymentStatus}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Payment Amount: </label>
+                <input
+                  type="number"
+                  name="paymentAmount"
+                  value={formData.paymentAmount}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Next Payment Date</label>
+                <input
+                  type="date"
+                  name="nextPaymentDate"
+                  value={formData.nextPaymentDate}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                />
+              </div>
+              <div className="flex justify-end gap-2 bottom-0 bg-white pt-4 z-10">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
