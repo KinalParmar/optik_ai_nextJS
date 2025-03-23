@@ -17,8 +17,8 @@ const poppins = Poppins({
 
 const sidebarItems = [
   { title: 'Home', link: '/master-admin/home', icon: HiOutlineHome },
-  { title: 'Leads', link: '/master-admin/users-list', icon: HiOutlineUserGroup },
-  { title: 'New Lead', link: '/master-admin/new-lead', icon: FiUserPlus },
+  // { title: 'Leads', link: '/master-admin/users-list', icon: HiOutlineUserGroup },
+  // { title: 'New Lead', link: '/master-admin/new-lead', icon: FiUserPlus },
   { title: 'User', link: '/master-admin/users', icon: HiOutlineUserGroup },
 ];
 

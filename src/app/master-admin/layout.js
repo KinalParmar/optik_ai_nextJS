@@ -1,9 +1,12 @@
 'use client';
 import { Inter } from 'next/font/google';
 import Sidebar from '@/components/SuperSidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect
 import { FiBell, FiUser } from 'react-icons/fi';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { showSuccessToast, showErrorToast } from '@/Components/Toaster'; // Added showErrorToast
+import { getAllNotificationsDetails } from '@/src/Services/Master-Admin/Home'; // Added API import
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,14 +15,41 @@ const inter = Inter({
 
 export default function SuperMasterAdminLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [useIconFallback, setUseIconFallback] = useState(false); // State to toggle between image and icon
+  const [useIconFallback, setUseIconFallback] = useState(false);
+  const [notifications, setNotifications] = useState([]); // State for notifications
+  const [loading, setLoading] = useState(false); // State for loading
+  const router = useRouter();
+
+  // Fetch notifications when the component mounts
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllNotificationsDetails();
+        if (response) {
+          setNotifications(response || []);
+          showSuccessToast('Notifications fetched successfully');
+        } else {
+          showErrorToast('Failed to fetch notifications');
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        showErrorToast('An error occurred while fetching notifications');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   const handleSignOut = () => {
-    // Add sign-out logic here (e.g., clear session, redirect)
-    console.log('Sign out clicked');
+    localStorage.clear();
+    Cookies.remove('token');
+    showSuccessToast('Signed out successfully');
+    router.push('/master-admin-login');
   };
 
-  // Function to handle image load error and switch to icon
   const handleImageError = () => {
     setUseIconFallback(true);
   };
@@ -35,7 +65,7 @@ export default function SuperMasterAdminLayout({ children }) {
                 <FiUser className="w-10 h-10 text-[#64748B] rounded-full p-1 bg-gray-200" />
               ) : (
                 <Image
-                  src={process.env.NEXT_PUBLIC_PROFILE_IMAGE || '/profile-placeholder.jpg'} // Use environment variable or fallback
+                  src={process.env.NEXT_PUBLIC_PROFILE_IMAGE || '/profile-placeholder.jpg'}
                   alt="Profile"
                   width={40}
                   height={40}
@@ -55,12 +85,33 @@ export default function SuperMasterAdminLayout({ children }) {
                 className="text-[#64748B] hover:text-[#1A1A1A] transition-colors duration-200"
               >
                 <FiBell className="w-6 h-6" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full transform translate-x-1/2 -translate-y-1/2">
+                    {notifications.length}
+                  </span>
+                )}
               </button>
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-2 z-10">
-                  <div className="px-4 py-2 text-sm text-gray-700">Notification 1</div>
-                  <div className="px-4 py-2 text-sm text-gray-700">Notification 2</div>
-                  <div className="px-4 py-2 text-sm text-gray-700">Notification 3</div>
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-2 z-10 max-h-96 overflow-y-auto">
+                  {loading ? (
+                    <div className="px-4 py-2 text-sm text-gray-700">Loading...</div>
+                  ) : notifications.length > 0 ? (
+                    notifications.map((notification, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                      >
+                        <p>{notification.notification}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Company: {notification.name}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-sm text-gray-700">
+                      No notifications available.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -72,9 +123,7 @@ export default function SuperMasterAdminLayout({ children }) {
             </button>
           </div>
         </div>
-        <div className="flex-1 p-6">
-          {children}
-        </div>
+        <div className="flex-1 p-6">{children}</div>
       </main>
     </div>
   );

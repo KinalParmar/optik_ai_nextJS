@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'
 // import { useLocation, useNavigate } from 'react-router-dom'; // For navigation and receiving data
 import { createLead, updateLead, generateSummary } from '@/src/Services/Master-Admin/Lead';
-import { Router } from 'next/router';
 // import { toast } from 'react-toastify';
 
 export default function NewLead() {
@@ -87,9 +86,21 @@ export default function NewLead() {
       if (isEditing) {
         // Update existing lead
         leadResponse = await updateLead(leadToEdit.id, leadData);
+        if (leadResponse.success) {
+          router.push('/master-admin/users-list');
+          Toaster.showSuccessToast(leadResponse?.message)
+        } else {
+          Toaster.showErrorToast(leadResponse?.message)
+        }
       } else {
         // Create new lead
         leadResponse = await createLead(leadData);
+        if (leadResponse.success) {
+          router.push('/master-admin/users-list');
+          Toaster.showSuccessToast(leadResponse?.message)
+        } else {
+          Toaster.showErrorToast(leadResponse?.message)
+        }
       }
 
       // Generate summary for the lead
@@ -109,6 +120,13 @@ export default function NewLead() {
       [name]: value
     }));
   };
+
+  useEffect(() => {
+    const getToken = localStorage?.getItem("token");
+    if (!getToken) {
+      router.push('/master-admin-login');
+    }
+  },[])
 
   return (
     <section className="p-8 max-w-[1400px] mx-auto">
