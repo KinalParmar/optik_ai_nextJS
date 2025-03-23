@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { useState } from 'react';
 import { FiBell, FiUser } from 'react-icons/fi';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -14,10 +15,13 @@ const inter = Inter({
 export default function MasterAdminLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false); // State to toggle between image and icon
+  const router = useRouter();
 
   const handleSignOut = () => {
-    // Add sign-out logic here (e.g., clear session, redirect)
-    console.log('Sign out clicked');
+    localStorage.clear();
+    Cookies.remove('Admintoken');
+    showSuccessToast('Signed out successfully');
+    router.push('/master-admin-login');
   };
 
   // Function to handle image load error and switch to icon

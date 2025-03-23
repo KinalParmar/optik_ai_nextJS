@@ -13,18 +13,8 @@ export default function UsersList() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [showRoles, setShowRoles] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
-  const [leads, setLeads] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john.doe@example.com",
-      jobTitle: "Senior Developer",
-      company: "Tech Corp",
-      linkedin: "https://linkedin.com/in/johndoe",
-      summary: "Experienced developer with 5+ years in software engineering.",
-      createdAt: "2025-03-01"
-    },
-  ]);
+  const [leads, setLeads] = useState([]);
+  
 
   const fileInputRef = useRef(null);
 
@@ -37,6 +27,13 @@ export default function UsersList() {
     setShowRoles(false);
     setEditingLead(null);
   };
+
+  useEffect(() => {
+    const getToken = localStorage?.getItem("token");
+    if (!getToken) {
+      router.push('/master-admin-login');
+    }
+  },[])
 
   const handleEdit = (lead) => {
     // Navigate to NewLead page with lead data

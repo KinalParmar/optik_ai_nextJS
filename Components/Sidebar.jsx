@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HiOutlineUserGroup } from 'react-icons/hi';
 import { FiUserPlus } from 'react-icons/fi';
-
-// Import Poppins font from Google Fonts
 import { Poppins } from 'next/font/google';
 
 const poppins = Poppins({
@@ -14,14 +12,31 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
+// const sidebarItems = [
+//   { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup, permissionKey: 'leads' },
+//   { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus, permissionKey: 'newleads' },
+//   { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup, permissionKey: "users" }, // No permission check for "User"
+// ];
+
 const sidebarItems = [
   { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup },
   { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus },
-  { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup },
+  { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup }, // No permission check for "User"
 ];
 
 export default function Sidebar() {
+  const permissions = JSON?.parse(localStorage?.getItem('user'))?.permissions || {};
   const pathname = usePathname();
+  console.log(permissions)
+
+  // Filter sidebar items based on permissions
+  const filteredSidebarItems = sidebarItems.filter((item) => {
+    // If there's no permissionKey, the item is always visible (e.g., "User")
+    if (!item.permissionKey) return true;
+    // Check if the permission array for the item exists and has length > 0
+    const permissionArray = permissions[item.permissionKey] || [];
+    return permissionArray.length > 0;
+  });
 
   return (
     <div className={`${poppins.variable} w-[260px] h-screen bg-white fixed left-0 top-0 border-r border-gray-200 flex flex-col shadow-md`}>
@@ -33,7 +48,7 @@ export default function Sidebar() {
       {/* Sidebar Menu */}
       <nav className="mt-4 px-4">
         <ul className="space-y-3">
-          {sidebarItems.map((item, index) => {
+          {filteredSidebarItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = pathname === item.link;
             return (

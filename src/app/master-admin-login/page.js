@@ -1,126 +1,149 @@
-'use client'
-import { useState } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import axios from 'axios'
-import Login from '@/src/Services/Master-Admin/Login'
+'use client';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from 'yup';
+import Login from '@/src/Services/Master-Admin/Login';
+import { AlertProvider, useAlert } from '@/Components/Toaster'; // Removed redundant imports
+import DotLoader from '@/Components/DotLoader';
+import Cookies from 'js-cookie'; // Added for cookie management
 
-export default function SuperAdminLogin() {
-  const router = useRouter()
+// Define validation schema with Yup
+const loginSchema = Yup.object().shape({
+  email: Yup.string().email('Invalid email format').required('Email is required'),
+  password: Yup.string().required('Password is required').min(1, 'Password cannot be empty'),
+});
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
+// Inner component to use the useAlert hook
+const LoginForm = () => {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { showSuccessToast, showErrorToast } = useAlert();
 
-  const [errors, setErrors] = useState({
-    email: '',
-    password: ''
-  })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
-
-    // Validation checks
-    if (name === 'email') {
-      setErrors({ ...errors, email: validateEmail(value) ? '' : 'Invalid email format' })
-    }
-
-    if (name === 'password') {
-      setErrors({ ...errors, password: value.trim() ? '' : 'Password cannot be empty' })
-    }
-  }
-
-  // Validate email format
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    // Final validation check before submitting
-    if (!validateEmail(formData.email)) {
-      setErrors({ ...errors, email: 'Invalid email format' })
-      return
-    }
-
-    if (!formData.password.trim()) {
-      setErrors({ ...errors, password: 'Password cannot be empty' })
-      return
-    }
-
+  const onSubmit = async (data) => {
     try {
-      const response = await Login.Loginapi(formData)
-
-      if (response?.success) {
-        router.push('/master-admin/home')
-         // Redirect on success
+      setLoading(true);
+      const response = await Login.Loginapi(data);
+      if (response.success) {
+        showSuccessToast(response.message);
+        localStorage.setItem('token', response.token);
+        const getToken = localStorage?.getItem("token");
+        // Cookies.set('token', response.token, { expires: 7 }); // Set cookie with 7-day expiry
+        if (getToken) {
+          router.push('/master-admin/home');
+        } else {
+          router.push('/master-admin-login');
+        }
+      } else {
+        showErrorToast(response.message || 'Login failed');
       }
     } catch (error) {
-      console.error('Login failed:', error.response ? error.response.data : error.message)
-      router.push('/master-admin/home')
-      // setErrors({ ...errors, password: 'Invalid credentials' }) // Set error message
+      console.error('Login failed:', error);
+      showErrorToast(error.message || 'An error occurred during login');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+
+  useEffect(() => {
+    const getToken = localStorage?.getItem("token");
+    if (!getToken) {
+      router.push('/master-admin-login');
+    }
+  },[])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F9FAFB]">
-      <div className="w-[400px]">
-        <div className="flex justify-center mb-8">
-          <Image
-            src="/optik-logo.png"
-            alt="Optik Logo"
-            width={120}
-            height={40}
-            priority
-          />
-        </div>
-
-        <div className="bg-white rounded-lg p-8">
-          <h1 className="text-[22px] font-semibold text-center mb-8 text-gray-900">
-            Master Admin Login
-          </h1>
-
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full h-11 px-3 rounded-md bg-white text-[15px] placeholder-gray-400 border ${errors.email ? 'border-red-500' : 'border-gray-300'
-                  } focus:outline-none focus:border-[#007BFF] focus:ring-1 focus:ring-[#007BFF]`}
+    <div>
+      {loading ? (
+        <DotLoader />
+      ) : (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#F9FAFB]">
+          <div className="w-[400px]">
+            <div className="flex justify-center mb-8">
+              <Image
+                src="/optik-logo.png"
+                alt="Optik Logo"
+                width={120}
+                height={40}
+                priority
               />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
-            <div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full h-11 px-3 rounded-md bg-white text-[15px] placeholder-gray-400 border ${errors.password ? 'border-red-500' : 'border-gray-300'
-                  } focus:outline-none focus:border-[#007BFF] focus:ring-1 focus:ring-[#007BFF]`}
-              />
-              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-            </div>
+            <div className="bg-white rounded-lg p-8">
+              <h1 className="text-[22px] font-semibold text-center mb-8 text-gray-900">
+                Master Admin Login
+              </h1>
 
-            <button
-              type="submit"
-              className="w-full h-11 bg-[#007BFF] text-white rounded-md text-[15px] font-medium hover:bg-[#0056b3] transition-colors"
-            >
-              LOGIN
-            </button>
-          </form>
+              <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+                <div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    {...register('email')}
+                    placeholder="Email"
+                    className={`w-full h-11 px-3 rounded-md bg-white text-[15px] placeholder-gray-400 border ${errors.email ? 'border-red-500' : 'border-gray-300'
+                      } focus:outline-none focus:border-[#007BFF] focus:ring-1 focus:ring-[#007BFF]`}
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    {...register('password')}
+                    placeholder="Password"
+                    className={`w-full h-11 px-3 rounded-md bg-white text-[15px] placeholder-gray-400 border ${errors.password ? 'border-red-500' : 'border-gray-300'
+                      } focus:outline-none focus:border-[#007BFF] focus:ring-1 focus:ring-[#007BFF]`}
+                  />
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full h-11 rounded-md text-[15px] font-medium transition-colors ${loading
+                      ? 'bg-[#007BFF]/70 text-white cursor-not-allowed'
+                      : 'bg-[#007BFF] text-white hover:bg-[#0056b3]'
+                    }`}
+                >
+                  {loading ? 'Logging in...' : 'LOGIN'}
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  )
+  );
+};
+
+// Wrap the component with AlertProvider
+export default function SuperAdminLogin() {
+  return (
+    <AlertProvider>
+      <LoginForm />
+    </AlertProvider>
+  );
 }
