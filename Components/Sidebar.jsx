@@ -12,22 +12,21 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
-// const sidebarItems = [
-//   { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup, permissionKey: 'leads' },
-//   { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus, permissionKey: 'newleads' },
-//   { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup, permissionKey: "users" }, // No permission check for "User"
-// ];
-
 const sidebarItems = [
-  { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup },
-  { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus },
-  { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup }, // No permission check for "User"
+  { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup, permissionKey: 'leads' },
+  { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus, permissionKey: 'newleads' },
+  { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup, permissionKey: "users" }, // No permission check for "User"
 ];
+
+// const sidebarItems = [
+//   { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup },
+//   { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus },
+//   { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup }, // No permission check for "User"
+// ];
 
 export default function Sidebar() {
   const permissions = JSON?.parse(localStorage?.getItem('user'))?.permissions || {};
   const pathname = usePathname();
-  console.log(permissions)
 
   // Filter sidebar items based on permissions
   const filteredSidebarItems = sidebarItems.filter((item) => {

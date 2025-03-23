@@ -7,7 +7,8 @@ import { showSuccessToast, showErrorToast } from '@/Components/Toaster';
 import DotLoader from '@/Components/DotLoader';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
-import { uploadLeadAdmin, updateLeadAdmin, generateSummaryLeadById, getAllLeads, deleteLeadAdmin } from '@/src/Services/Admin/Lead';
+import { uploadLeadAdmin, updateLeadAdmin, getAllLeadAdmin, deleteLeadAdmin } from '@/src/Services/Admin/Lead';
+import { generateSummaryLeadById } from '@/src/Services/Admin/NewLead';
 
 // Note: Ensure the following APIs are defined in '@/src/Services/Admin/Lead':
 // - getAllLeads: To fetch all leads from the backend
@@ -244,7 +245,7 @@ export default function UsersList() {
   const allLeads = async () => {
     try {
       setLoading(true);
-      const response = await getAllLeads();
+      const response = await getAllLeadAdmin();
       if (response?.data?.success) {
         setLeads(response?.data?.data || []);
         showSuccessToast('Leads loaded successfully');

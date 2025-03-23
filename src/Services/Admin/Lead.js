@@ -28,6 +28,16 @@ export const deleteLeadAdmin = async (id) => {
     }
 }
 
+export const updateLeadAdmin = async (id, data) => {
+    try {
+        const resp = await axiosInstance.patch(`/tenant/leads/${id}`, data);
+        return resp.data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
+
 export const uploadLeadAdmin = async (formData) => {
     try {
         const response = await axiosInstance.post('tenant/leads/upload', formData, {

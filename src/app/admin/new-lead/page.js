@@ -2,7 +2,7 @@
 import { createNewLeadAdmin } from '@/src/Services/Admin/NewLead';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { generateSummaryLeadById } from '@/src/Services/Admin/NewLead';
+import { generateSummaryLeadById, uploadLeadAdmin } from '@/src/Services/Admin/NewLead';
 import { useForm } from 'react-hook-form';
 import { showSuccessToast, showErrorToast, showMessageToast } from '@/Components/Toaster';
 import { yupResolver } from '@hookform/resolvers/yup';
