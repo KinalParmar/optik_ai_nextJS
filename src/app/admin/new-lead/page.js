@@ -1,8 +1,8 @@
 'use client';
 import { createNewLeadAdmin } from '@/src/Services/Admin/NewLead';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { generateSummaryLeadById } from '@/src/Services/Admin/NewLead';
+import { generateSummaryLeadById, uploadLeadAdmin } from '@/src/Services/Admin/NewLead';
 import { useForm } from 'react-hook-form';
 import { showSuccessToast, showErrorToast, showMessageToast } from '@/Components/Toaster';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -20,9 +20,9 @@ const leadSchema = Yup.object().shape({
     .trim()
     .notOneOf([''], 'Last Name cannot be empty'),
   linkedinUrl: Yup.string()
-    .required('LinkedIn URL is required')
-    .url('Must be a valid URL')
-    .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
+    .required('LinkedIn URL is required'),
+    // .url('Must be a valid URL')
+    // .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
   email: Yup.string()
     .email('Invalid email format')
     .required('Email is required'),
@@ -35,9 +35,9 @@ const leadSchema = Yup.object().shape({
     .trim()
     .notOneOf([''], 'Company Name cannot be empty'),
   company_linkedin: Yup.string()
-    .required('Company LinkedIn is required')
-    .url('Must be a valid URL')
-    .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
+    .required('Company LinkedIn is required'),
+    // .url('Must be a valid URL')
+    // .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
   phoneNumber: Yup.string()
     .nullable()
     .notRequired()
@@ -54,7 +54,7 @@ const leadSchema = Yup.object().shape({
 export default function NewLead() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : {};
   const leadPermissions = user?.permissions?.leads || [];
 
   // Define permission checks

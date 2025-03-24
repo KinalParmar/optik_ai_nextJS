@@ -9,7 +9,7 @@ import { showSuccessToast, showErrorToast } from '@/Components/Toaster';
 import DotLoader from '@/Components/DotLoader';
 import { useRouter } from 'next/navigation';
 
-// Define Yup validation schema
+// Define Yup validation schema for user creation/editing
 const userSchema = Yup.object().shape({
   name: Yup.string()
     .required('Name is required')
@@ -18,21 +18,16 @@ const userSchema = Yup.object().shape({
   email: Yup.string()
     .email('Invalid email format')
     .required('Email is required'),
-  password: Yup.string().when('$isEditing', (isEditing, schema) =>
-    isEditing
-      ? schema
-      : schema
-          .required('Password is required')
-          .min(6, 'Password must be at least 6 characters')
-  ),
-  confirmPassword: Yup.string().when('$isEditing', (isEditing, schema) =>
-    isEditing
-      ? schema
-      : schema
-          .required('Confirm Password is required')
-          .oneOf([Yup.ref('password')], 'Passwords must match')
-  ),
+  password: Yup.string()
+    .required('Password is required')
+    .notOneOf([''], 'Password cannot be empty'),
+  confirmPassword: Yup.string()
+    .required('Confirm Password is required')
+    .oneOf([Yup.ref('password')], 'Passwords must match'),
 });
+
+// Define Yup validation schema for roles (no required fields)
+const rolesSchema = Yup.object().shape({});
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +40,7 @@ export default function Users() {
     confirmPassword: '',
     permissions: {
       leads: [],
-      newleads: [],
+      users: [],
     },
   });
   const router = useRouter();
@@ -54,7 +49,7 @@ export default function Users() {
   const [modal, setModal] = useState({ show: false, message: '', type: 'error' });
   const [deleteModal, setDeleteModal] = useState({ show: false, userId: null });
   const [loading, setLoading] = useState(false);
-  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) || {} : {};
   const userPermissions = user?.permissions?.users || [];
 
   // Define permission checks
@@ -63,9 +58,15 @@ export default function Users() {
   const canDelete = true || userPermissions?.includes('delete');
   const canCreate = true || userPermissions?.includes('create');
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
+  // useForm for user creation/editing form
+  const {
+    register: registerUser,
+    handleSubmit: handleSubmitUser,
+    formState: { errors: userErrors },
+    reset: resetUser,
+    setValue: setUserValue,
+  } = useForm({
     resolver: yupResolver(userSchema),
-    context: { isEditing: !!editingUser?.id },
     defaultValues: {
       name: '',
       email: '',
@@ -74,12 +75,21 @@ export default function Users() {
     },
   });
 
+  // useForm for roles form
+  const {
+    handleSubmit: handleSubmitRoles,
+    reset: resetRoles,
+  } = useForm({
+    resolver: yupResolver(rolesSchema),
+    defaultValues: {},
+  });
+
   useEffect(() => {
     const getToken = localStorage?.getItem("Admintoken");
     if (!getToken) {
       router.push('/admin-login');
     }
-  },[])
+  }, []);
 
   useEffect(() => {
     if (canRead) {
@@ -91,8 +101,9 @@ export default function Users() {
     try {
       setLoading(true);
       const response = await getUsers();
-      if (response?.success) {
-        setUsers(response?.data ?? []);
+      if (response) {
+        showSuccessToast('Users fetched successfully');
+        setUsers(response ?? []);
       } else {
         showErrorToast(response?.message);
       }
@@ -124,11 +135,11 @@ export default function Users() {
         ...prev,
         [name]: value,
       }));
-      setValue(name, value); // Update react-hook-form values
+      setUserValue(name, value); // Update react-hook-form values for user form
     }
   };
 
-  const onSubmit = async (data) => {
+  const onSubmitUser = async (data) => {
     const submitData = {
       name: data?.name,
       email: data?.email,
@@ -157,6 +168,34 @@ export default function Users() {
     }
   };
 
+  const onSubmitRoles = async () => {
+    const submitData = {
+      name: editingUser?.name, // Use existing name
+      email: editingUser?.email, // Use existing email
+      permissions: formData?.permissions, // Updated permissions
+    };
+
+    try {
+      setLoading(true);
+      if (editingUser?.id) {
+        await updateUser(editingUser?.id, submitData);
+        showSuccessToast('User roles updated successfully!');
+      } else {
+        showErrorToast('No user selected for updating roles.');
+        return;
+      }
+      await fetchUsers();
+      resetForm();
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'An error occurred while saving roles';
+      showErrorToast(errorMessage);
+      console?.error('Failed to submit roles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
@@ -164,12 +203,12 @@ export default function Users() {
       email: user?.email ?? '',
       password: '',
       confirmPassword: '',
-      permissions: user?.permissions ?? { leads: [], newleads: [] },
+      permissions: user?.permissions ?? { leads: [], users: [] },
     });
-    setValue('name', user?.name ?? '');
-    setValue('email', user?.email ?? '');
-    setValue('password', '');
-    setValue('confirmPassword', '');
+    setUserValue('name', user?.name ?? '');
+    setUserValue('email', user?.email ?? '');
+    setUserValue('password', '');
+    setUserValue('confirmPassword', '');
     setShowForm(true);
     setShowRoles(false);
   };
@@ -181,7 +220,7 @@ export default function Users() {
       email: user?.email ?? '',
       password: '',
       confirmPassword: '',
-      permissions: user?.permissions ?? { leads: [], newleads: [] },
+      permissions: user?.permissions ?? { leads: [], users: [] },
     });
     setShowRoles(true);
     setShowForm(false);
@@ -214,12 +253,13 @@ export default function Users() {
       email: '',
       password: '',
       confirmPassword: '',
-      permissions: { leads: [], newleads: [] },
+      permissions: { leads: [], users: [] },
     });
     setEditingUser(null);
     setShowForm(false);
     setShowRoles(false);
-    reset();
+    resetUser();
+    resetRoles();
   };
 
   const closeModal = () => {
@@ -289,22 +329,22 @@ export default function Users() {
                   </div>
 
                   <div className="flex justify-center">
-                    <form onSubmit={handleSubmit(onSubmit)} className="w-[320px] space-y-4">
+                    <form onSubmit={handleSubmitUser(onSubmitUser)} className="w-[320px] space-y-4">
                       <div>
                         <label className="block text-[13px] font-bold text-[#334155] mb-1">
                           Name
                         </label>
                         <input
                           type="text"
-                          {...register('name')}
+                          {...registerUser('name')}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            errors?.name ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.name ? 'border-red-500' : 'border-[#E2E8F0]'
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Enter name"
                         />
-                        {errors?.name && (
-                          <p className="text-red-500 text-sm mt-1">{errors?.name?.message}</p>
+                        {userErrors?.name && (
+                          <p className="text-red-500 text-sm mt-1">{userErrors?.name?.message}</p>
                         )}
                       </div>
                       <div>
@@ -313,15 +353,15 @@ export default function Users() {
                         </label>
                         <input
                           type="email"
-                          {...register('email')}
+                          {...registerUser('email')}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            errors?.email ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.email ? 'border-red-500' : 'border-[#E2E8F0]'
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Enter email"
                         />
-                        {errors?.email && (
-                          <p className="text-red-500 text-sm mt-1">{errors?.email?.message}</p>
+                        {userErrors?.email && (
+                          <p className="text-red-500 text-sm mt-1">{userErrors?.email?.message}</p>
                         )}
                       </div>
                       <div>
@@ -330,15 +370,15 @@ export default function Users() {
                         </label>
                         <input
                           type="password"
-                          {...register('password')}
+                          {...registerUser('password')}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            errors?.password ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.password ? 'border-red-500' : 'border-[#E2E8F0]'
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Enter new password"
                         />
-                        {errors?.password && (
-                          <p className="text-red-500 text-sm mt-1">{errors?.password?.message}</p>
+                        {userErrors?.password && (
+                          <p className="text-red-500 text-sm mt-1">{userErrors?.password?.message}</p>
                         )}
                       </div>
                       <div>
@@ -347,16 +387,16 @@ export default function Users() {
                         </label>
                         <input
                           type="password"
-                          {...register('confirmPassword')}
+                          {...registerUser('confirmPassword')}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            errors?.confirmPassword ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.confirmPassword ? 'border-red-500' : 'border-[#E2E8F0]'
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Confirm new password"
                         />
-                        {errors?.confirmPassword && (
+                        {userErrors?.confirmPassword && (
                           <p className="text-red-500 text-sm mt-1">
-                            {errors?.confirmPassword?.message}
+                            {userErrors?.confirmPassword?.message}
                           </p>
                         )}
                       </div>
@@ -388,7 +428,7 @@ export default function Users() {
                   </div>
 
                   <div className="flex justify-center">
-                    <form onSubmit={handleSubmit(onSubmit)} className="w-80 space-y-4">
+                    <form onSubmit={handleSubmitRoles(onSubmitRoles)} className="w-80 space-y-4">
                       <div>
                         <h3 className="text-sm font-bold text-gray-700 mb-2">Leads Permissions</h3>
                         {permissionOptions?.map((permission) => (
@@ -411,23 +451,19 @@ export default function Users() {
                         ))}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-gray-700 mb-2">
-                          New Leads Permissions
-                        </h3>
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">Users Permissions</h3>
                         {permissionOptions?.map((permission) => (
-                          <div key={`newleads-${permission}`} className="flex items-center gap-2">
+                          <div key={`users-${permission}`} className="flex items-center gap-2">
                             <input
                               type="checkbox"
-                              id={`newleads-${permission}`}
-                              name={`newleads-${permission}`}
-                              checked={
-                                formData?.permissions?.newleads?.includes(permission) ?? false
-                              }
+                              id={`users-${permission}`}
+                              name={`users-${permission}`}
+                              checked={formData?.permissions?.users?.includes(permission) ?? false}
                               onChange={handleInputChange}
                               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                             />
                             <label
-                              htmlFor={`newleads-${permission}`}
+                              htmlFor={`users-${permission}`}
                               className="text-sm font-medium text-gray-700 cursor-pointer"
                             >
                               {permission?.charAt(0)?.toUpperCase() + permission?.slice(1)}

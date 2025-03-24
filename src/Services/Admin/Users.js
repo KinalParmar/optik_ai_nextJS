@@ -50,6 +50,7 @@ export const deleteUser = async (id) => {
 
 export const getUsers = async () => {
     try {
+        debugger
         const response = await axiosInstance.get('/tenant/user', {
             headers: {
                 'x-tenant': dbSlug,
@@ -57,7 +58,7 @@ export const getUsers = async () => {
             }
         });
         // Assuming you want to refresh leads after upload
-        return response
+        return response.data;
       } catch (error) {
         console.error(error);
         throw error;

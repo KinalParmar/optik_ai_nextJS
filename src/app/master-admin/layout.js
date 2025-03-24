@@ -1,12 +1,12 @@
 'use client';
 import { Inter } from 'next/font/google';
 import Sidebar from '@/components/SuperSidebar';
-import { useState, useEffect } from 'react'; // Added useEffect
+import { useState, useEffect } from 'react';
 import { FiBell, FiUser } from 'react-icons/fi';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { showSuccessToast, showErrorToast } from '@/Components/Toaster'; // Added showErrorToast
-import { getAllNotificationsDetails } from '@/src/Services/Master-Admin/Home'; // Added API import
+import { showSuccessToast, showErrorToast } from '@/Components/Toaster';
+import { getAllNotificationsDetails } from '@/src/Services/Master-Admin/Home';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -16,11 +16,10 @@ const inter = Inter({
 export default function SuperMasterAdminLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false);
-  const [notifications, setNotifications] = useState([]); // State for notifications
-  const [loading, setLoading] = useState(false); // State for loading
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Fetch notifications when the component mounts
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -45,7 +44,6 @@ export default function SuperMasterAdminLayout({ children }) {
 
   const handleSignOut = () => {
     localStorage.clear();
-    Cookies.remove('token');
     showSuccessToast('Signed out successfully');
     router.push('/master-admin-login');
   };
@@ -92,19 +90,21 @@ export default function SuperMasterAdminLayout({ children }) {
                 )}
               </button>
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-2 z-10 max-h-96 overflow-y-auto">
+                <div
+                  className="absolute right-0 mt-2 w-80 bg-white border border-[#E2E8F0] rounded-lg shadow-lg py-2 z-10 
+                  max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
+                >
                   {loading ? (
                     <div className="px-4 py-2 text-sm text-gray-700">Loading...</div>
                   ) : notifications.length > 0 ? (
                     notifications.map((notification, index) => (
                       <div
                         key={index}
-                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                        className="px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 
+                        border-b border-gray-100 last:border-b-0 flex flex-col"
                       >
-                        <p>{notification.notification}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Company: {notification.name}
-                        </p>
+                        <p className="font-semibold">{notification.notification}</p>
+                        <p className="text-xs text-gray-500 mt-1">Company: {notification.name}</p>
                       </div>
                     ))
                   ) : (
