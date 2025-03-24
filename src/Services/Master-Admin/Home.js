@@ -1,4 +1,5 @@
 import axiosInstance from "@/src/Interceptor/Interceptor";
+import { showErrorToast } from "@/Components/Toaster";
 
 export const getAllCompany = async () => {
     try {
@@ -21,9 +22,10 @@ export const getAllNotificationsDetails = async () => {
 export const createNewCompany = async (formData) => {
     try {
         const resp = await axiosInstance.post("/master-admin/tenant/new", formData);
-        return resp;
+        return resp.data;
     } catch (error) {
-        console.error(error);
+        console.log("error", error?.response?.data?.message)
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
     }
 }
 
@@ -39,6 +41,15 @@ export const updateCompany = async (id, companyData) => {
 export const deleteCompany = async (id) => {
     try {
         const resp = await axiosInstance.delete(`/master-admin/tenant/${id}`);
+        return resp.data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export const dashStats = async () => {
+    try {
+        const resp = await axiosInstance.get(`/master-admin/tenant/stats`);
         return resp.data;
     } catch (error) {
         console.error(error);

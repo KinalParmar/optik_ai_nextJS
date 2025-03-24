@@ -20,7 +20,12 @@ export const getAllLeadAdmin = async () => {
 
 export const deleteLeadAdmin = async (id) => {
     try {
-        const resp = await axiosInstance.delete(`/master-admin/leads/${id}`);
+        const resp = await axiosInstance.delete(`/tenant/leads/${id}`, {
+            headers: {
+                'x-tenant': dbSlug,
+                'Content-Type': 'application/json'
+            }
+        });
         return resp.data;
     } catch (error) {
         console.error(error);
@@ -30,7 +35,12 @@ export const deleteLeadAdmin = async (id) => {
 
 export const updateLeadAdmin = async (id, data) => {
     try {
-        const resp = await axiosInstance.patch(`/tenant/leads/${id}`, data);
+        const resp = await axiosInstance.patch(`/tenant/leads/${id}`, data, {
+            headers: {
+                'x-tenant': dbSlug,
+                'Content-Type': 'application/json'
+            }
+        });
         return resp.data;
     } catch (error) {
         console.error(error);

@@ -160,10 +160,10 @@ export default function Users() {
     try {
       setLoading(true);
       setError(null);
-
+  
       // Find the company being updated
       const company = users.find((user) => user.id === id);
-
+  
       // Construct the full company object with updated permissions
       const updatedData = {
         ...company,
@@ -175,12 +175,12 @@ export default function Users() {
           },
         },
       };
-
+  
       await handleUpdateCompany(id, updatedData);
     } catch (err) {
-      setError('Failed to update company permissions');
-      showErrorToast('Failed to update company permissions');
-      console.error('Error updating company permissions:', err);
+      setError('Failed to update permissions');
+      showErrorToast('Failed to update permissions');
+      console.error('Error updating permissions:', err);
     } finally {
       setLoading(false);
     }
@@ -251,14 +251,14 @@ export default function Users() {
       {loading ? <DotLoader /> : (
         <section className="px-8 py-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-[20px] font-bold text-[#334155]">Companies</h1>
+            <h1 className="text-[20px] font-bold text-[#334155]">Users</h1>
             {!showForm && !showRoles && (
               <div className="flex items-center gap-2.5">
                 <div className="relative">
                   <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B] w-3.5 h-3.5" />
                   <input
                     type="text"
-                    placeholder="Search Companies..."
+                    placeholder="Search Users..."
                     className="pl-8 pr-3 py-[7px] rounded-[4px] border border-[#E2E8F0] w-[200px] text-[13px] font-medium focus:outline-none focus:border-[#6366F1] placeholder-[#64748B]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -281,7 +281,7 @@ export default function Users() {
                   <FiArrowLeft className="w-5 h-5 text-gray-500" />
                 </button>
                 <h2 className="text-xl font-semibold text-gray-700">
-                  {editingUser ? 'Edit Company Admin' : 'Add New Company Admin'}
+                  {editingUser ? 'Edit User' : 'Add New User'}
                 </h2>
               </div>
 
@@ -359,7 +359,7 @@ export default function Users() {
                   >
                     <FiArrowLeft className="w-5 h-5 text-gray-500" />
                   </button>
-                  <h2 className="text-xl font-semibold text-gray-700">Company Permissions</h2>
+                  <h2 className="text-xl font-semibold text-gray-700"> Permissions</h2>
                 </div>
 
                 <form
@@ -419,7 +419,7 @@ export default function Users() {
                             <input
                               type="checkbox"
                               id={`users-${name}`}
-                              checked={usersPermissions.includes(name)}
+                              checked={usersPermissions?.includes(name)}
                               onChange={() => handleUsersPermissionChange(name)}
                               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                             />
@@ -455,7 +455,7 @@ export default function Users() {
                 <thead className="bg-[#DDDAFA]">
                   <tr>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
-                      Company Name
+                      Name
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
                       DB Slug
@@ -480,13 +480,13 @@ export default function Users() {
                         <td className="px-4 py-3 text-gray-600">{user?.admin?.email}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <button
+                            {/* <button
                               onClick={() => handleEdit(user)}
                               className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
                               title="Edit Company Admin"
                             >
                               <FiEdit2 className="w-4 h-4" />
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => handleRoles(user)}
                               className="p-1.5 text-[#22C55E] hover:bg-[#22C55E] hover:bg-opacity-10 rounded transition-colors duration-200 text-[12px] font-bold"

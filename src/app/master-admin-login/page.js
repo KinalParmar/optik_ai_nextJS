@@ -8,7 +8,6 @@ import * as Yup from 'yup';
 import Login from '@/src/Services/Master-Admin/Login';
 import { AlertProvider, useAlert } from '@/Components/Toaster'; // Removed redundant imports
 import DotLoader from '@/Components/DotLoader';
-import Cookies from 'js-cookie'; // Added for cookie management
 
 // Define validation schema with Yup
 const loginSchema = Yup.object().shape({
@@ -42,7 +41,6 @@ const LoginForm = () => {
         showSuccessToast(response.message);
         localStorage.setItem('token', response.token);
         const getToken = localStorage?.getItem("token");
-        // Cookies.set('token', response.token, { expires: 7 }); // Set cookie with 7-day expiry
         if (getToken) {
           router.push('/master-admin/home');
         } else {

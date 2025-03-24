@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { FiBell, FiUser } from 'react-icons/fi';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { showErrorToast, showSuccessToast } from '@/Components/Toaster';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -19,7 +20,6 @@ export default function MasterAdminLayout({ children }) {
 
   const handleSignOut = () => {
     localStorage.clear();
-    Cookies.remove('Admintoken');
     showSuccessToast('Signed out successfully');
     router.push('/master-admin-login');
   };
@@ -55,7 +55,7 @@ export default function MasterAdminLayout({ children }) {
           </div>
           <div className="flex items-center">
             <div className="relative mr-6">
-              <button
+              {/* <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="text-[#64748B] hover:text-[#1A1A1A] transition-colors duration-200"
               >
@@ -67,7 +67,7 @@ export default function MasterAdminLayout({ children }) {
                   <div className="px-4 py-2 text-sm text-gray-700">Notification 2</div>
                   <div className="px-4 py-2 text-sm text-gray-700">Notification 3</div>
                 </div>
-              )}
+              )} */}
             </div>
             <button
               onClick={handleSignOut}

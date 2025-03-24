@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FiPlus, FiEye, FiEdit2, FiTrash2, FiTrendingUp, FiUsers, FiBriefcase } from 'react-icons/fi'; // Added new icons
-import { getAllCompany, createNewCompany, updateCompany, deleteCompany, getAllNotificationsDetails } from '@/src/Services/Master-Admin/Home';
+import { FiPlus, FiEye, FiEdit2, FiTrash2, FiUsers } from 'react-icons/fi';
+import { getAllCompany, createNewCompany, updateCompany, deleteCompany, dashStats, getAllNotificationsDetails } from '@/src/Services/Master-Admin/Home';
+import { ImOffice } from "react-icons/im";
+import { MdLeaderboard } from "react-icons/md";
 import { showSuccessToast, showErrorToast } from '@/Components/Toaster';
 import DotLoader from '@/Components/DotLoader';
 import { useForm } from 'react-hook-form';
@@ -29,8 +31,7 @@ const companySchema = Yup.object().shape({
     otherwise: (schema) => schema.notRequired(),
   }),
   totalUsersAllowed: Yup.number()
-    .required('Total users allowed is required')
-    .min(1, 'Total users allowed must be at least 1'),
+    .required('Total users allowed is required'),
   paymentStatus: Yup.string().required('Payment status is required'),
   paymentAmount: Yup.number()
     .required('Payment amount is required')
@@ -49,6 +50,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [stats, setStats] = useState([]);
   const router = useRouter();
 
   const {
@@ -57,6 +59,7 @@ export default function Home() {
     reset,
     formState: { errors },
     setValue,
+    watch,
   } = useForm({
     resolver: yupResolver(companySchema),
     defaultValues: {
@@ -75,13 +78,19 @@ export default function Home() {
         users: ['create', 'read', 'update', 'delete'],
         leads: ['create', 'read', 'update', 'delete'],
       },
-      totalUsersAllowed: 10,
+      totalUsersAllowed: 0,
       isEnabled: true,
       paymentStatus: '',
       paymentAmount: 0,
       nextPaymentDate: '',
     },
   });
+
+  const id = watch('id');
+
+  // Calculate total leads and users from stats
+  const totalLeads = stats.reduce((sum, stat) => sum + (stat.leadsCount || 0), 0);
+  const totalUsers = stats.reduce((sum, stat) => sum + (stat.userCount || 0), 0);
 
   const onSubmit = async (data) => {
     const companyData = {
@@ -113,25 +122,23 @@ export default function Home() {
           showSuccessToast(response?.message || 'Company updated successfully');
         } else {
           setLoading(false);
-          showErrorToast(response || 'Failed to update company');
         }
       } else {
         setLoading(true);
         const response = await createNewCompany(companyData);
+        console.log(response.data);
         if (response?.success) {
           await getAllCompanyDetails();
           showSuccessToast(response?.message || 'Company created successfully');
         } else {
           setLoading(false);
-          showErrorToast(response?.message || 'Failed to create company');
         }
       }
       setLoading(false);
       reset();
       setShowForm(false);
     } catch (error) {
-      console.error('Error submitting form:', error);
-      showErrorToast(error || 'An error occurred');
+      console.log('Error submitting form:', error);
       setLoading(false);
     }
   };
@@ -139,9 +146,9 @@ export default function Home() {
   useEffect(() => {
     const getToken = localStorage?.getItem("token");
     if (!getToken) {
-      router.push('/master-admin-login');
+      router?.push('/master-admin-login');
     }
-  },[])
+  }, []);
 
   const handleView = (company) => {
     setSelectedCompany(company);
@@ -152,20 +159,21 @@ export default function Home() {
     setValue('id', company?.id);
     setValue('dbSlug', company?.dbSlug);
     setValue('name', company?.name);
-    setValue('regNo', company?.regNo);
-    setValue('email', company?.email);
-    setValue('address', company?.address);
+    setValue('regNo', company?.regNo || '');
+    setValue('email', company?.email || '');
+    setValue('address', company?.address || '');
     setValue('pincode', company?.pincode || '');
     setValue('adminName', company?.admin?.name);
     setValue('adminEmail', company?.admin?.email);
-    setValue('adminPassword', '');
+    setValue('adminPassword', ''); // Reset password field for edit
     setValue('isAdmin', company?.admin?.isAdmin);
     setValue('permissions', company?.admin?.permissions);
     setValue('totalUsersAllowed', company?.totalUsersAllowed);
-    setValue('isEnabled', company?.isEnabled);
-    setValue('paymentStatus', company?.paymentStatus);
-    setValue('paymentAmount', company?.paymentAmount);
-    setValue('nextPaymentDate', company?.nextPaymentDate);
+    setValue('isEnabled', company?.isEnabled !== undefined ? company?.isEnabled : true);
+    setValue('paymentStatus', company?.paymentStatus || '');
+    setValue('paymentAmount', company?.paymentAmount || 0);
+    setValue('nextPaymentDate', company?.nextPaymentDate ? 
+      new Date(company?.nextPaymentDate)?.toISOString()?.split('T')[0] : '');
     setShowForm(true);
   };
 
@@ -191,13 +199,14 @@ export default function Home() {
     } catch (error) {
       setLoading(false);
       console.error('Error deleting company:', error);
-      showErrorToast(error || 'An error occurred');
+      showErrorToast(error?.message || 'An error occurred');
     }
   };
 
   useEffect(() => {
     getAllCompanyDetails();
     getAllNotifications();
+    getAllDashStats();
   }, []);
 
   const getAllCompanyDetails = async () => {
@@ -206,6 +215,8 @@ export default function Home() {
       const response = await getAllCompany();
       if (response) {
         setCompanies(response || []);
+        setLoading(false);
+        localStorage.setItem('companies', JSON.stringify(response));
         showSuccessToast(response?.message || 'Companies fetched successfully');
       } else {
         setLoading(false);
@@ -214,7 +225,27 @@ export default function Home() {
     } catch (error) {
       setLoading(false);
       console.error('Error fetching companies:', error);
-      showErrorToast(error || 'An error occurred');
+      showErrorToast(error?.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAllDashStats = async () => {
+    try {
+      setLoading(true);
+      const response = await dashStats();
+      if (response) {
+        setStats(response || []);
+        showSuccessToast(response?.message || 'Stats fetched successfully');
+      } else {
+        setLoading(false);
+        showErrorToast(response?.message || 'Failed to fetch stats');
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error('Error fetching stats:', error);
+      showErrorToast(error?.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -226,7 +257,6 @@ export default function Home() {
       const response = await getAllNotificationsDetails();
       if (response) {
         setNotifications(response?.notifications || []);
-        showSuccessToast(response?.message || 'Notifications fetched successfully');
       } else {
         setLoading(false);
         showErrorToast(response?.message || 'Failed to fetch notifications');
@@ -234,7 +264,7 @@ export default function Home() {
     } catch (error) {
       setLoading(false);
       console.error('Error fetching notifications:', error);
-      showErrorToast(error || 'An error occurred');
+      showErrorToast(error?.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -249,40 +279,26 @@ export default function Home() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {[
-              { title: 'Total Leads', count: '245', icon: FiTrendingUp },
-              { title: 'Users', count: '15', icon: FiUsers },
-              { title: 'Companies', count: companies.length, icon: FiBriefcase },
-            ].map((card, index) => {
-              const Icon = card.icon; // Assign the icon component
+              { title: 'Total Leads', count: totalLeads, icon: MdLeaderboard },
+              { title: 'Users', count: totalUsers, icon: FiUsers },
+              { title: 'Companies', count: companies?.length, icon: ImOffice },
+            ]?.map((card, index) => {
+              const Icon = card?.icon;
               return (
                 <div
                   key={index}
                   className="bg-[#DDDAFA] bg-opacity-50 rounded-lg p-6 text-center border border-[#DDDAFA] shadow-sm hover:shadow-md transition-shadow duration-300"
                   style={{ backdropFilter: 'blur(5px)' }}
                 >
-                  <Icon className="w-6 h-6 mx-auto mb-2 text-gray-400" /> {/* Render the icon */}
+                  <Icon className="w-6 h-6 mx-auto mb-2 text-gray-400" />
                   <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                    {card.title}
+                    {card?.title}
                   </h3>
-                  <p className="text-2xl font-semibold text-gray-800">{card.count}</p>
+                  <p className="text-2xl font-semibold text-gray-800">{card?.count}</p>
                 </div>
               );
             })}
           </div>
-
-          {/* Notification Area */}
-          {notifications.length > 0 && (
-            <div className="mb-6">
-              {notifications.map((notification, index) => (
-                <div
-                  key={index}
-                  className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-2 rounded"
-                >
-                  {notification}
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Companies Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
@@ -319,13 +335,13 @@ export default function Home() {
                 <tbody>
                   {companies?.map((company) => (
                     <tr
-                      key={company.id}
+                      key={company?.id}
                       className="border-t border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                     >
-                      <td className="px-4 py-3 font-medium text-gray-800">{company.dbSlug}</td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{company.name}</td>
-                      <td className="px-4 py-3">{company.admin.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{company.admin.email}</td>
+                      <td className="px-4 py-3 font-medium text-gray-800">{company?.dbSlug}</td>
+                      <td className="px-4 py-3 font-medium text-gray-800">{company?.name}</td>
+                      <td className="px-4 py-3">{company?.admin?.name}</td>
+                      <td className="px-4 py-3 text-gray-600">{company?.admin?.email}</td>
                       <td className="px-4 py-3 flex gap-3">
                         <button
                           onClick={() => handleView(company)}
@@ -340,7 +356,7 @@ export default function Home() {
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(company.id)}
+                          onClick={() => handleDelete(company?.id)}
                           className="p-1.5 text-[#EF4444] hover:bg-[#EF4444] hover:bg-opacity-10 rounded transition-colors duration-200"
                         >
                           <FiTrash2 className="w-4 h-4" />
@@ -370,82 +386,22 @@ export default function Home() {
                   <div className="mb-6">
                     <div className="mb-4">
                       <h3 className="text-2xl font-extrabold text-[#334155]">
-                        {selectedCompany.name}
+                        {selectedCompany?.name}
                       </h3>
                     </div>
                     <div className="space-y-4">
                       <p className="pb-2 border-b border-[#EEEEEE]">
                         <strong className="text-[#334155] font-extrabold">ID:</strong>{' '}
-                        {selectedCompany.id || '-'}
+                        {selectedCompany?.id || '-'}
                       </p>
                       <p className="pb-2 border-b border-[#EEEEEE]">
                         <strong className="text-[#334155] font-extrabold">DB Slug:</strong>{' '}
-                        {selectedCompany.dbSlug || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Register No:</strong>{' '}
-                        {selectedCompany.regNo || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Email:</strong>{' '}
-                        {selectedCompany.email || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Address:</strong>{' '}
-                        {selectedCompany.address || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Pincode:</strong>{' '}
-                        {selectedCompany.pincode || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Admin Name:</strong>{' '}
-                        {selectedCompany.admin.name || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Admin Email:</strong>{' '}
-                        {selectedCompany.admin.email || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Is Admin:</strong>{' '}
-                        {selectedCompany.admin.isAdmin ? 'Yes' : 'No'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Total Users Allowed:
-                        </strong>{' '}
-                        {selectedCompany.totalUsersAllowed || '0'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Is Enabled:</strong>{' '}
-                        {selectedCompany.isEnabled ? 'Yes' : 'No'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Payment Status:</strong>{' '}
-                        {selectedCompany.paymentStatus || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Payment Amount:</strong>{' '}
-                        ${selectedCompany.paymentAmount || '0'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Next Payment Date:
-                        </strong>{' '}
-                        {selectedCompany.nextPaymentDate || '-'}
+                        {selectedCompany?.dbSlug || '-'}
                       </p>
                       <p className="pb-2 border-b border-[#EEEEEE]">
                         <strong className="text-[#334155] font-extrabold">Permissions:</strong>{' '}
-                        Users: {selectedCompany.admin.permissions?.users?.join(', ') || '-'},
-                        Leads: {selectedCompany.admin.permissions?.leads?.join(', ') || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Created At:</strong>{' '}
-                        {selectedCompany.admin.createdAt || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Updated At:</strong>{' '}
-                        {selectedCompany.admin.updatedAt || '-'}
+                        Users: {selectedCompany?.admin?.permissions?.users?.join(', ') || '-'},
+                        Leads: {selectedCompany?.admin?.permissions?.leads?.join(', ') || '-'}
                       </p>
                     </div>
                   </div>
@@ -454,14 +410,14 @@ export default function Home() {
             </div>
           )}
 
-          {/* New Company Form */}
+          {/* New Company Form (Three Fields Per Row) */}
           {showForm && (
             <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg max-h-[80vh] overflow-y-auto">
-                <h3 className="text-lg font-medium text-gray-800 mb-4 top-0 bg-white z-10">
-                  {errors.id?.value ? 'Edit Company' : 'Add New Company'}
+              <div className="bg-white rounded-lg p-8 w-full max-w-4xl shadow-lg">
+                <h3 className="text-xl font-medium text-gray-800 mb-6">
+                  {id ? 'Edit Company' : 'Add New Company'}
                 </h3>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">DB Slug</label>
                     <input
@@ -469,8 +425,8 @@ export default function Home() {
                       {...register('dbSlug')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.dbSlug && (
-                      <p className="text-red-500 text-xs mt-1">{errors.dbSlug.message}</p>
+                    {errors?.dbSlug && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.dbSlug?.message}</p>
                     )}
                   </div>
                   <div>
@@ -480,21 +436,19 @@ export default function Home() {
                       {...register('name')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.name && (
-                      <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+                    {errors?.name && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.name?.message}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Registration No
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Registration No</label>
                     <input
                       type="text"
                       {...register('regNo')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.regNo && (
-                      <p className="text-red-500 text-xs mt-1">{errors.regNo.message}</p>
+                    {errors?.regNo && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.regNo?.message}</p>
                     )}
                   </div>
                   <div>
@@ -504,8 +458,8 @@ export default function Home() {
                       {...register('email')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.email && (
-                      <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                    {errors?.email && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.email?.message}</p>
                     )}
                   </div>
                   <div>
@@ -515,8 +469,8 @@ export default function Home() {
                       {...register('address')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.address && (
-                      <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
+                    {errors?.address && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.address?.message}</p>
                     )}
                   </div>
                   <div>
@@ -526,8 +480,8 @@ export default function Home() {
                       {...register('pincode')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.pincode && (
-                      <p className="text-red-500 text-xs mt-1">{errors.pincode.message}</p>
+                    {errors?.pincode && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.pincode?.message}</p>
                     )}
                   </div>
                   <div>
@@ -537,8 +491,8 @@ export default function Home() {
                       {...register('adminName')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.adminName && (
-                      <p className="text-red-500 text-xs mt-1">{errors.adminName.message}</p>
+                    {errors?.adminName && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.adminName?.message}</p>
                     )}
                   </div>
                   <div>
@@ -548,52 +502,35 @@ export default function Home() {
                       {...register('adminEmail')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.adminEmail && (
-                      <p className="text-red-500 text-xs mt-1">{errors.adminEmail.message}</p>
+                    {errors?.adminEmail && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.adminEmail?.message}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Admin Password
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Admin Password</label>
                     <input
                       type="password"
                       {...register('adminPassword')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.adminPassword && (
-                      <p className="text-red-500 text-xs mt-1">{errors.adminPassword.message}</p>
+                    {errors?.adminPassword && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.adminPassword?.message}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Is Admin</label>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        {...register('isAdmin')}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Total Users Allowed
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Total Users Allowed</label>
                     <input
                       type="number"
                       {...register('totalUsersAllowed')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.totalUsersAllowed && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.totalUsersAllowed.message}
-                      </p>
+                    {errors?.totalUsersAllowed && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.totalUsersAllowed?.message}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Is Enabled</label>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className="block text-sm font-medium text-gray-700">Company Enabled</label>
+                    <label className="relative inline-flex items-center cursor-pointer mt-2">
                       <input
                         type="checkbox"
                         {...register('isEnabled')}
@@ -603,45 +540,41 @@ export default function Home() {
                     </label>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Payment Status
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Payment Status</label>
                     <input
                       type="text"
                       {...register('paymentStatus')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.paymentStatus && (
-                      <p className="text-red-500 text-xs mt-1">{errors.paymentStatus.message}</p>
+                    {errors?.paymentStatus && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.paymentStatus?.message}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Payment Amount
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Payment Amount</label>
                     <input
                       type="number"
                       {...register('paymentAmount')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.paymentAmount && (
-                      <p className="text-red-500 text-xs mt-1">{errors.paymentAmount.message}</p>
+                    {errors?.paymentAmount && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.paymentAmount?.message}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Next Payment Date
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Next Payment Date</label>
                     <input
                       type="date"
                       {...register('nextPaymentDate')}
                       className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
                     />
-                    {errors.nextPaymentDate && (
-                      <p className="text-red-500 text-xs mt-1">{errors.nextPaymentDate.message}</p>
+                    {errors?.nextPaymentDate && (
+                      <p className="text-red-500 text-xs mt-1">{errors?.nextPaymentDate?.message}</p>
                     )}
                   </div>
-                  <div className="flex justify-end gap-2 bottom-0 bg-white pt-4 z-10">
+
+                  {/* Buttons */}
+                  <div className="col-span-3 flex justify-end gap-4 mt-6">
                     <button
                       type="button"
                       onClick={() => {
