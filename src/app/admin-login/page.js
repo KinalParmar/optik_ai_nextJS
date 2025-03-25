@@ -49,20 +49,20 @@ export default function AdminLogin() {
 
       const response = await Login?.Loginapi(data);
       if (response?.success) {
+        router?.push('/admin/users-list');
         localStorage?.setItem('Admintoken', response?.token);
         localStorage?.setItem('user', JSON.stringify(response?.user));
         const getToken = localStorage?.getItem("Admintoken");
-        if (getToken) {
-          router?.push('/admin/users-list');
-        } else {
+        if (!getToken) {
           router?.push('/admin-login')
         }
-        showSuccessToast(response?.message);
+        showSuccessToast(response?.message || 'Login successful');
       } else {
-        showErrorToast(response?.message);
+        console?.error('Login failed');
+        // showErrorToast(response?.message || 'Login failed');
       }
     } catch (error) {
-      showErrorToast(error?.message || 'An error occurred during login');
+      // showErrorToast(error?.message || 'An error occurred during login');
       console?.error('Login failed:', error);
     } finally {
       setLoading(false);

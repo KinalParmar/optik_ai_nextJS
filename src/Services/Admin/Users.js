@@ -50,7 +50,6 @@ export const deleteUser = async (id) => {
 
 export const getUsers = async () => {
     try {
-        debugger
         const response = await axiosInstance.get('/tenant/user', {
             headers: {
                 'x-tenant': dbSlug,
