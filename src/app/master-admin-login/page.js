@@ -37,15 +37,14 @@ const LoginForm = () => {
     try {
       setLoading(true);
       const response = await Login.Loginapi(data);
-      if (response.success) {
-        showSuccessToast(response.message);
+      if (response?.success) {
+        router?.push('/master-admin/home');
+        showSuccessToast(response?.message);
         localStorage.setItem('token', response.token);
         const getToken = localStorage?.getItem("token");
-        if (getToken) {
-          router.push('/master-admin/home');
-        } else {
-          router.push('/master-admin-login');
-        }
+        if (!getToken) {
+          router?.push('/master-admin-login');
+        } 
       } else {
         showErrorToast(response.message || 'Login failed');
       }

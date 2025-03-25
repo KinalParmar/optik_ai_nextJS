@@ -126,7 +126,6 @@ export default function Home() {
       } else {
         setLoading(true);
         const response = await createNewCompany(companyData);
-        console.log(response.data);
         if (response?.success) {
           await getAllCompanyDetails();
           showSuccessToast(response?.message || 'Company created successfully');
@@ -172,7 +171,7 @@ export default function Home() {
     setValue('isEnabled', company?.isEnabled !== undefined ? company?.isEnabled : true);
     setValue('paymentStatus', company?.paymentStatus || '');
     setValue('paymentAmount', company?.paymentAmount || 0);
-    setValue('nextPaymentDate', company?.nextPaymentDate ? 
+    setValue('nextPaymentDate', company?.nextPaymentDate ?
       new Date(company?.nextPaymentDate)?.toISOString()?.split('T')[0] : '');
     setShowForm(true);
   };
@@ -419,11 +418,14 @@ export default function Home() {
                 </h3>
                 <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">DB Slug</label>
+                    <label className="block text-sm font-medium text-gray-700  ${id ? 'cursor-not-allowed text-gray-900 border-gray-300' : ''}`}">DB Slug</label>
                     <input
                       type="text"
                       {...register('dbSlug')}
-                      className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                      className={`mt-1 block w-full rounded-md border border-gray-200 bg-gray-50 text-gray-800 p-2 
+                      focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50
+                      ${id ? 'cursor-not-allowed bg-gray-200 text-gray-500 border-gray-300' : ''}`}
+                      disabled={id ? true : false}
                     />
                     {errors?.dbSlug && (
                       <p className="text-red-500 text-xs mt-1">{errors?.dbSlug?.message}</p>
