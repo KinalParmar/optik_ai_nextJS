@@ -137,7 +137,7 @@ export default function Home() {
       reset();
       setShowForm(false);
     } catch (error) {
-      console.log('Error submitting form:', error);
+      console.error('Error submitting form:', error);
       setLoading(false);
     }
   };

@@ -24,7 +24,7 @@ export const createNewCompany = async (formData) => {
         const resp = await axiosInstance.post("/master-admin/tenant/new", formData);
         return resp.data;
     } catch (error) {
-        console.log("error", error?.response?.data?.message)
+        console.error("error", error?.response?.data?.message)
         showErrorToast(error?.response?.data?.message || 'An error occurred');
     }
 }
