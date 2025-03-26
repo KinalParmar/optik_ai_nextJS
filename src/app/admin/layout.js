@@ -17,6 +17,7 @@ export default function MasterAdminLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false); // State to toggle between image and icon
   const router = useRouter();
+  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
 
   const handleSignOut = () => {
     localStorage.clear();
@@ -50,7 +51,7 @@ export default function MasterAdminLayout({ children }) {
               )}
             </div>
             <span className="text-[20px] font-bold text-[#64748B]">
-              Welcome back, Admin 👋
+              Welcome back, {user?.name} 👋
             </span>
           </div>
           <div className="flex items-center">

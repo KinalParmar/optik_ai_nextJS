@@ -27,7 +27,6 @@ export default function SuperMasterAdminLayout({ children }) {
         const response = await getAllNotificationsDetails();
         if (response) {
           setNotifications(response || []);
-          showSuccessToast('Notifications fetched successfully');
         } else {
           showErrorToast('Failed to fetch notifications');
         }

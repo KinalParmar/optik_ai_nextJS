@@ -10,6 +10,11 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en'; // Import English labels
+import 'react-phone-number-input/style.css';
 
 // Define the Yup validation schema
 const companySchema = Yup.object().shape({
@@ -39,6 +44,10 @@ const companySchema = Yup.object().shape({
   nextPaymentDate: Yup.string().required('Next payment date is required'),
   isAdmin: Yup.boolean(),
   isEnabled: Yup.boolean(),
+  adminCountryCode: Yup.string().required('Country code is required'),
+  adminPhoneNumber: Yup.string()
+    .required('Phone number is required')
+    .matches(/^[0-9]{7,15}$/, 'Phone number must be between 7 and 15 digits'),
 });
 
 export default function Home() {
@@ -51,6 +60,7 @@ export default function Home() {
   const [companies, setCompanies] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState([]);
+  const [searchQuery, setSearchQuery] = useState(''); // State for search query
   const router = useRouter();
 
   const {
@@ -83,10 +93,28 @@ export default function Home() {
       paymentStatus: '',
       paymentAmount: 0,
       nextPaymentDate: '',
+      adminCountryCode: '',
+      adminPhoneNumber: '',
     },
   });
 
   const id = watch('id');
+  const adminCountryCode = watch('adminCountryCode');
+
+  // Get the list of countries with their calling codes and names
+  const countryList = getCountries();
+  if (!countryList || countryList.length === 0) {
+    console.error('Error: No countries found from getCountries()');
+  }
+
+  const countries = countryList
+    .map((country) => ({
+      code: `+${getCountryCallingCode(country)}`,
+      countryCode: country,
+      name: en[country] || country,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
 
   // Calculate total leads and users from stats
   const totalLeads = stats.reduce((sum, stat) => sum + (stat.leadsCount || 0), 0);
@@ -111,6 +139,8 @@ export default function Home() {
       paymentStatus: data?.paymentStatus,
       paymentAmount: data?.paymentAmount,
       nextPaymentDate: data?.nextPaymentDate,
+      adminCountryCode: data?.adminCountryCode,
+      adminPhoneNumber: data?.adminPhoneNumber,
     };
 
     try {
@@ -173,6 +203,8 @@ export default function Home() {
     setValue('paymentAmount', company?.paymentAmount || 0);
     setValue('nextPaymentDate', company?.nextPaymentDate ?
       new Date(company?.nextPaymentDate)?.toISOString()?.split('T')[0] : '');
+    setValue('adminCountryCode', company?.adminCountryCode || '');
+    setValue('adminPhoneNumber', company?.adminPhoneNumber || '');
     setShowForm(true);
   };
 
@@ -402,6 +434,12 @@ export default function Home() {
                         Users: {selectedCompany?.admin?.permissions?.users?.join(', ') || '-'},
                         Leads: {selectedCompany?.admin?.permissions?.leads?.join(', ') || '-'}
                       </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Phone Number:</strong>{' '}
+                        {selectedCompany?.adminCountryCode && selectedCompany?.adminPhoneNumber
+                          ? `${selectedCompany.adminCountryCode} ${selectedCompany.adminPhoneNumber}`
+                          : '-'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -418,7 +456,9 @@ export default function Home() {
                 </h3>
                 <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700  ${id ? 'cursor-not-allowed text-gray-900 border-gray-300' : ''}`}">DB Slug</label>
+                    <label className={`block text-sm font-medium text-gray-700 ${id ? 'cursor-not-allowed text-gray-900 border-gray-300' : ''}`}>
+                      DB Slug
+                    </label>
                     <input
                       type="text"
                       {...register('dbSlug')}
@@ -476,7 +516,7 @@ export default function Home() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Pincode</label>
+                    <label className="block text-sm font-medium text-gray-700">Postal Code</label>
                     <input
                       type="text"
                       {...register('pincode')}
@@ -518,6 +558,89 @@ export default function Home() {
                     {errors?.adminPassword && (
                       <p className="text-red-500 text-xs mt-1">{errors?.adminPassword?.message}</p>
                     )}
+                  </div>
+                  {/* Admin Phone Number with Country Code */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Admin Phone Number</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-24">
+                        <Select
+                          value={adminCountryCode || ''} // Ensure value is always a string
+                        >
+                          <SelectTrigger className="h-9 text-sm border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50">
+                            <SelectValue placeholder="+XX">
+                              {adminCountryCode ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="react-phone-number-input__icon">
+                                    <img
+                                      src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${
+                                        countries.find((c) => c.code === adminCountryCode)?.countryCode
+                                      }.svg`}
+                                      alt="flag"
+                                      className="w-5 h-3"
+                                    />
+                                  </span>
+                                  <span>{adminCountryCode}</span>
+                                </div>
+                              ) : (
+                                '+XX'
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <Command>
+                              <CommandInput
+                                placeholder="Search country..."
+                                value={searchQuery}
+                                onValueChange={(value) => {
+                                  setSearchQuery(value || '');
+                                }}
+                                className="h-9"
+                              />
+                              <CommandList className="max-h-60 overflow-y-auto">
+                                <CommandEmpty>No country found.</CommandEmpty>
+                                {countries.map((country) => (
+                                  <CommandItem
+                                    key={country.countryCode} // Unique key
+                                    value={`${country.name} ${country.code}`} // Use both name and code for filtering
+                                    onSelect={() => {
+                                      setValue('adminCountryCode', country.code);
+                                      setSearchQuery(''); // Reset search query on selection
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="react-phone-number-input__icon">
+                                        <img
+                                          src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.countryCode}.svg`}
+                                          alt={`${country.countryCode} flag`}
+                                          className="w-5 h-3"
+                                        />
+                                      </span>
+                                      <span>{country.name}</span>
+                                      <span>({country.code})</span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandList>
+                            </Command>
+                          </SelectContent>
+                        </Select>
+                        {errors?.adminCountryCode && (
+                          <p className="text-red-500 text-xs mt-1">{errors?.adminCountryCode?.message}</p>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          {...register('adminPhoneNumber')}
+                          className="h-9 text-sm block w-full rounded-md border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50 p-2"
+                          placeholder="Enter a phone number"
+                        />
+                        {errors?.adminPhoneNumber && (
+                          <p className="text-red-500 text-xs mt-1">{errors?.adminPhoneNumber?.message}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Total Users Allowed</label>

@@ -8,6 +8,11 @@ import * as Yup from 'yup';
 import { showSuccessToast, showErrorToast } from '@/Components/Toaster';
 import DotLoader from '@/Components/DotLoader';
 import { useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en'; // Import English labels
+import 'react-phone-number-input/style.css';
 
 // Define Yup validation schema for user creation/editing
 const userSchema = Yup.object().shape({
@@ -24,6 +29,10 @@ const userSchema = Yup.object().shape({
   confirmPassword: Yup.string()
     .required('Confirm Password is required')
     .oneOf([Yup.ref('password')], 'Passwords must match'),
+  countryCode: Yup.string().required('Country code is required'),
+  phoneNumber: Yup.string()
+    .required('Phone number is required')
+    .matches(/^[0-9]{7,15}$/, 'Phone number must be between 7 and 15 digits'),
 });
 
 // Define Yup validation schema for roles (no required fields)
@@ -33,11 +42,14 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // State for country code search query
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
+    countryCode: '',
+    phoneNumber: '',
     permissions: {
       leads: [],
       users: [],
@@ -65,6 +77,7 @@ export default function Users() {
     formState: { errors: userErrors },
     reset: resetUser,
     setValue: setUserValue,
+    watch,
   } = useForm({
     resolver: yupResolver(userSchema),
     defaultValues: {
@@ -72,8 +85,12 @@ export default function Users() {
       email: '',
       password: '',
       confirmPassword: '',
+      countryCode: '',
+      phoneNumber: '',
     },
   });
+
+  const countryCode = watch('countryCode');
 
   // useForm for roles form
   const {
@@ -83,6 +100,25 @@ export default function Users() {
     resolver: yupResolver(rolesSchema),
     defaultValues: {},
   });
+
+  // Get the list of countries with their calling codes and names
+  const countryList = getCountries();
+  if (!countryList || countryList.length === 0) {
+    console.error('Error: No countries found from getCountries()');
+  }
+
+  const countries = countryList
+    .map((country) => ({
+      code: `+${getCountryCallingCode(country)}`,
+      countryCode: country,
+      name: en[country] || country,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Debugging logs
+  console.log('Search Query:', searchQuery);
+  console.log('Countries:', countries);
+  console.log('Current countryCode:', countryCode);
 
   useEffect(() => {
     const getToken = localStorage?.getItem("Admintoken");
@@ -144,6 +180,8 @@ export default function Users() {
       name: data?.name,
       email: data?.email,
       password: data?.password,
+      countryCode: data?.countryCode,
+      phoneNumber: data?.phoneNumber,
       permissions: formData?.permissions,
     };
 
@@ -170,9 +208,11 @@ export default function Users() {
 
   const onSubmitRoles = async () => {
     const submitData = {
-      name: editingUser?.name, // Use existing name
-      email: editingUser?.email, // Use existing email
-      permissions: formData?.permissions, // Updated permissions
+      name: editingUser?.name,
+      email: editingUser?.email,
+      countryCode: editingUser?.countryCode,
+      phoneNumber: editingUser?.phoneNumber,
+      permissions: formData?.permissions,
     };
 
     try {
@@ -203,12 +243,16 @@ export default function Users() {
       email: user?.email ?? '',
       password: '',
       confirmPassword: '',
+      countryCode: user?.countryCode ?? '',
+      phoneNumber: user?.phoneNumber ?? '',
       permissions: user?.permissions ?? { leads: [], users: [] },
     });
     setUserValue('name', user?.name ?? '');
     setUserValue('email', user?.email ?? '');
     setUserValue('password', '');
     setUserValue('confirmPassword', '');
+    setUserValue('countryCode', user?.countryCode ?? '');
+    setUserValue('phoneNumber', user?.phoneNumber ?? '');
     setShowForm(true);
     setShowRoles(false);
   };
@@ -220,6 +264,8 @@ export default function Users() {
       email: user?.email ?? '',
       password: '',
       confirmPassword: '',
+      countryCode: user?.countryCode ?? '',
+      phoneNumber: user?.phoneNumber ?? '',
       permissions: user?.permissions ?? { leads: [], users: [] },
     });
     setShowRoles(true);
@@ -253,11 +299,14 @@ export default function Users() {
       email: '',
       password: '',
       confirmPassword: '',
+      countryCode: '',
+      phoneNumber: '',
       permissions: { leads: [], users: [] },
     });
     setEditingUser(null);
     setShowForm(false);
     setShowRoles(false);
+    setSearchQuery('');
     resetUser();
     resetRoles();
   };
@@ -363,6 +412,99 @@ export default function Users() {
                         {userErrors?.email && (
                           <p className="text-red-500 text-sm mt-1">{userErrors?.email?.message}</p>
                         )}
+                      </div>
+                      <div>
+                        <label className="block text-[13px] font-bold text-[#334155] mb-1">
+                          Phone Number
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="w-[90px]">
+                            <Select
+                              value={countryCode || ''}
+                            >
+                              <SelectTrigger className="h-[34px] text-[13px] border-[#E2E8F0] bg-white text-[#334155] focus:border-[#6366F1] focus:ring-0">
+                                <SelectValue placeholder="+XX">
+                                  {countryCode ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="react-phone-number-input__icon">
+                                        <img
+                                          src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${
+                                            countries.find((c) => c.code === countryCode)?.countryCode
+                                          }.svg`}
+                                          alt="flag"
+                                          className="w-4 h-3"
+                                        />
+                                      </span>
+                                      <span>{countryCode}</span>
+                                    </div>
+                                  ) : (
+                                    '+XX'
+                                  )}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <Command>
+                                  <CommandInput
+                                    placeholder="Search country..."
+                                    value={searchQuery}
+                                    onValueChange={(value) => {
+                                      console.log('CommandInput onValueChange:', value);
+                                      setSearchQuery(value || '');
+                                    }}
+                                    className="h-9 text-[13px]"
+                                  />
+                                  <CommandList className="max-h-60 overflow-y-auto">
+                                    <CommandEmpty>No country found.</CommandEmpty>
+                                    {countries.map((country) => (
+                                      <CommandItem
+                                        key={country.countryCode}
+                                        value={`${country.name} ${country.code}`}
+                                        onSelect={() => {
+                                          console.log('CommandItem onSelect triggered with value:', country.code);
+                                          setUserValue('countryCode', country.code);
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            countryCode: country.code,
+                                          }));
+                                          setSearchQuery('');
+                                        }}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="react-phone-number-input__icon">
+                                            <img
+                                              src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.countryCode}.svg`}
+                                              alt={`${country.countryCode} flag`}
+                                              className="w-4 h-3"
+                                            />
+                                          </span>
+                                          <span>{country.name}</span>
+                                          <span>({country.code})</span>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandList>
+                                </Command>
+                              </SelectContent>
+                            </Select>
+                            {userErrors?.countryCode && (
+                              <p className="text-red-500 text-sm mt-1">{userErrors?.countryCode?.message}</p>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              {...registerUser('phoneNumber')}
+                              onChange={handleInputChange}
+                              className={`w-full px-3 py-2 rounded border ${
+                                userErrors?.phoneNumber ? 'border-red-500' : 'border-[#E2E8F0]'
+                              } focus:outline-none focus:border-[#6366F1] text-[13px]`}
+                              placeholder="Enter phone number"
+                            />
+                            {userErrors?.phoneNumber && (
+                              <p className="text-red-500 text-sm mt-1">{userErrors?.phoneNumber?.message}</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-[13px] font-bold text-[#334155] mb-1">
