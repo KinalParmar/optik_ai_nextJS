@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
-import en from 'react-phone-number-input/locale/en'; // Import English labels
+import en from 'react-phone-number-input/locale/en';
 import 'react-phone-number-input/style.css';
 
 // Define the Yup validation schema
@@ -25,7 +25,9 @@ const companySchema = Yup.object().shape({
     .email('Email must be in a valid format')
     .required('Email is required'),
   address: Yup.string().required('Address is required'),
-  pincode: Yup.string().required('Pincode is required'),
+  pincode: Yup.string()
+    .required('Postal code is required')
+    .matches(/^[0-9]{6}$/, 'Postal code must be exactly 6 digits'),
   adminName: Yup.string().required('Admin name is required'),
   adminEmail: Yup.string()
     .email('Admin email must be in a valid format')
@@ -36,9 +38,12 @@ const companySchema = Yup.object().shape({
     otherwise: (schema) => schema.notRequired(),
   }),
   totalUsersAllowed: Yup.number()
-    .required('Total users allowed is required'),
+    .typeError('Total users allowed must be a number')
+    .required('Total users allowed is required')
+    .min(0, 'Total users allowed cannot be negative'),
   paymentStatus: Yup.string().required('Payment status is required'),
   paymentAmount: Yup.number()
+    .typeError('Payment amount must be a number')
     .required('Payment amount is required')
     .min(0, 'Payment amount cannot be negative'),
   nextPaymentDate: Yup.string().required('Next payment date is required'),
@@ -60,7 +65,7 @@ export default function Home() {
   const [companies, setCompanies] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(''); // State for search query
+  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
   const {
@@ -88,10 +93,10 @@ export default function Home() {
         users: ['create', 'read', 'update', 'delete'],
         leads: ['create', 'read', 'update', 'delete'],
       },
-      totalUsersAllowed: 0,
+      totalUsersAllowed: '',
       isEnabled: true,
       paymentStatus: '',
-      paymentAmount: 0,
+      paymentAmount: '',
       nextPaymentDate: '',
       adminCountryCode: '',
       adminPhoneNumber: '',
@@ -101,7 +106,6 @@ export default function Home() {
   const id = watch('id');
   const adminCountryCode = watch('adminCountryCode');
 
-  // Get the list of countries with their calling codes and names
   const countryList = getCountries();
   if (!countryList || countryList.length === 0) {
     console.error('Error: No countries found from getCountries()');
@@ -115,8 +119,6 @@ export default function Home() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-
-  // Calculate total leads and users from stats
   const totalLeads = stats.reduce((sum, stat) => sum + (stat.leadsCount || 0), 0);
   const totalUsers = stats.reduce((sum, stat) => sum + (stat.userCount || 0), 0);
 
@@ -185,26 +187,30 @@ export default function Home() {
   };
 
   const handleEdit = (company) => {
-    setValue('id', company?.id);
-    setValue('dbSlug', company?.dbSlug);
-    setValue('name', company?.name);
+    setValue('id', company?._id || '');
+    setValue('dbSlug', company?.dbSlug || '');
+    setValue('name', company?.name || '');
     setValue('regNo', company?.regNo || '');
     setValue('email', company?.email || '');
     setValue('address', company?.address || '');
     setValue('pincode', company?.pincode || '');
-    setValue('adminName', company?.admin?.name);
-    setValue('adminEmail', company?.admin?.email);
+    setValue('adminName', company?.admin?.name || '');
+    setValue('adminEmail', company?.admin?.email || '');
     setValue('adminPassword', ''); // Reset password field for edit
-    setValue('isAdmin', company?.admin?.isAdmin);
-    setValue('permissions', company?.admin?.permissions);
-    setValue('totalUsersAllowed', company?.totalUsersAllowed);
-    setValue('isEnabled', company?.isEnabled !== undefined ? company?.isEnabled : true);
+    setValue('isAdmin', company?.admin?.isAdmin ?? true);
+    setValue('permissions', company?.admin?.permissions || {
+      users: ['create', 'read', 'update', 'delete'],
+      leads: ['create', 'read', 'update', 'delete'],
+    });
+    setValue('totalUsersAllowed', company?.totalUsersAllowed || '');
+    setValue('isEnabled', company?.isEnabled ?? true);
     setValue('paymentStatus', company?.paymentStatus || '');
-    setValue('paymentAmount', company?.paymentAmount || 0);
-    setValue('nextPaymentDate', company?.nextPaymentDate ?
-      new Date(company?.nextPaymentDate)?.toISOString()?.split('T')[0] : '');
-    setValue('adminCountryCode', company?.adminCountryCode || '');
-    setValue('adminPhoneNumber', company?.adminPhoneNumber || '');
+    setValue('paymentAmount', company?.paymentAmount || '');
+    setValue('nextPaymentDate', company?.nextPaymentDate
+      ? new Date(company?.nextPaymentDate).toISOString().split('T')[0]
+      : '');
+    setValue('adminCountryCode', company?.admin?.countryCode || '');
+    setValue('adminPhoneNumber', company?.admin?.phoneNumber || '');
     setShowForm(true);
   };
 
@@ -244,10 +250,14 @@ export default function Home() {
     try {
       setLoading(true);
       const response = await getAllCompany();
+      console.log('Fetched companies:', response);
       if (response) {
-        setCompanies(response || []);
+        const uniqueCompanies = Array.isArray(response) ? response.filter(
+          (company, index, self) => company?._id && self.findIndex(c => c._id === company._id) === index
+        ) : [];
+        setCompanies(uniqueCompanies);
         setLoading(false);
-        localStorage.setItem('companies', JSON.stringify(response));
+        localStorage.setItem('companies', JSON.stringify(uniqueCompanies));
         showSuccessToast(response?.message || 'Companies fetched successfully');
       } else {
         setLoading(false);
@@ -313,11 +323,11 @@ export default function Home() {
               { title: 'Total Leads', count: totalLeads, icon: MdLeaderboard },
               { title: 'Users', count: totalUsers, icon: FiUsers },
               { title: 'Companies', count: companies?.length, icon: ImOffice },
-            ]?.map((card, index) => {
+            ].map((card) => {
               const Icon = card?.icon;
               return (
                 <div
-                  key={index}
+                  key={card.title}
                   className="bg-[#DDDAFA] bg-opacity-50 rounded-lg p-6 text-center border border-[#DDDAFA] shadow-sm hover:shadow-md transition-shadow duration-300"
                   style={{ backdropFilter: 'blur(5px)' }}
                 >
@@ -364,37 +374,45 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {companies?.map((company) => (
-                    <tr
-                      key={company?.id}
-                      className="border-t border-gray-100 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <td className="px-4 py-3 font-medium text-gray-800">{company?.dbSlug}</td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{company?.name}</td>
-                      <td className="px-4 py-3">{company?.admin?.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{company?.admin?.email}</td>
-                      <td className="px-4 py-3 flex gap-3">
-                        <button
-                          onClick={() => handleView(company)}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          <FiEye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(company)}
-                          className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
-                        >
-                          <FiEdit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(company?.id)}
-                          className="p-1.5 text-[#EF4444] hover:bg-[#EF4444] hover:bg-opacity-10 rounded transition-colors duration-200"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
+                  {companies?.length > 0 ? (
+                    companies.map((company) => (
+                      <tr
+                        key={company?._id || Math.random().toString(36).substr(2, 9)}
+                        className="border-t border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                      >
+                        <td className="px-4 py-3 font-medium text-gray-800">{company?.dbSlug || '-'}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{company?.name || '-'}</td>
+                        <td className="px-4 py-3">{company?.admin?.name || '-'}</td>
+                        <td className="px-4 py-3 text-gray-600">{company?.admin?.email || '-'}</td>
+                        <td className="px-4 py-3 flex gap-3">
+                          <button
+                            onClick={() => handleView(company)}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            <FiEye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(company)}
+                            className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
+                          >
+                            <FiEdit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(company?._id)}
+                            className="p-1.5 text-[#EF4444] hover:bg-[#EF4444] hover:bg-opacity-10 rounded transition-colors duration-200"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="px-4 py-3 text-center text-gray-500">
+                        No companies found
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -406,7 +424,7 @@ export default function Home() {
               <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-xl font-extrabold text-[#334155]">Company Info</h4>
+                    <h4 className="text-xl font-extrabold text-[#334155]">Information</h4>
                     <button
                       onClick={() => setShowViewModal(false)}
                       className="text-gray-400 hover:text-gray-600"
@@ -417,27 +435,69 @@ export default function Home() {
                   <div className="mb-6">
                     <div className="mb-4">
                       <h3 className="text-2xl font-extrabold text-[#334155]">
-                        {selectedCompany?.name}
+                        {selectedCompany?.name || '-'}
                       </h3>
                     </div>
                     <div className="space-y-4">
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">ID:</strong>{' '}
-                        {selectedCompany?.id || '-'}
-                      </p>
                       <p className="pb-2 border-b border-[#EEEEEE]">
                         <strong className="text-[#334155] font-extrabold">DB Slug:</strong>{' '}
                         {selectedCompany?.dbSlug || '-'}
                       </p>
                       <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Permissions:</strong>{' '}
-                        Users: {selectedCompany?.admin?.permissions?.users?.join(', ') || '-'},
-                        Leads: {selectedCompany?.admin?.permissions?.leads?.join(', ') || '-'}
+                        <strong className="text-[#334155] font-extrabold">Registration No:</strong>{' '}
+                        {selectedCompany?.regNo || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Email:</strong>{' '}
+                        {selectedCompany?.email || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Address:</strong>{' '}
+                        {selectedCompany?.address || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Postal Code:</strong>{' '}
+                        {selectedCompany?.pincode || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Admin Name:</strong>{' '}
+                        {selectedCompany?.admin?.name || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Admin Email:</strong>{' '}
+                        {selectedCompany?.admin?.email || '-'}
                       </p>
                       <p className="pb-2 border-b border-[#EEEEEE]">
                         <strong className="text-[#334155] font-extrabold">Phone Number:</strong>{' '}
-                        {selectedCompany?.adminCountryCode && selectedCompany?.adminPhoneNumber
-                          ? `${selectedCompany.adminCountryCode} ${selectedCompany.adminPhoneNumber}`
+                        {selectedCompany?.admin?.countryCode && selectedCompany?.admin?.phoneNumber
+                          ? `${selectedCompany.admin.countryCode} ${selectedCompany.admin.phoneNumber}`
+                          : '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Permissions:</strong>{' '}
+                        Users: {selectedCompany?.admin?.permissions?.users?.join(', ') || '-'}, 
+                        Leads: {selectedCompany?.admin?.permissions?.leads?.join(', ') || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Total Users Allowed:</strong>{' '}
+                        {selectedCompany?.totalUsersAllowed || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Enabled:</strong>{' '}
+                        {selectedCompany?.isEnabled !== undefined ? selectedCompany.isEnabled.toString() : '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Payment Status:</strong>{' '}
+                        {selectedCompany?.paymentStatus || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Payment Amount:</strong>{' '}
+                        {selectedCompany?.paymentAmount || '-'}
+                      </p>
+                      <p className="pb-2 border-b border-[#EEEEEE]">
+                        <strong className="text-[#334155] font-extrabold">Next Payment Date:</strong>{' '}
+                        {selectedCompany?.nextPaymentDate
+                          ? new Date(selectedCompany.nextPaymentDate).toLocaleDateString()
                           : '-'}
                       </p>
                     </div>
@@ -447,7 +507,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* New Company Form (Three Fields Per Row) */}
+          {/* New/Edit Company Form */}
           {showForm && (
             <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-8 w-full max-w-4xl shadow-lg">
@@ -456,16 +516,16 @@ export default function Home() {
                 </h3>
                 <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-3 gap-6">
                   <div>
-                    <label className={`block text-sm font-medium text-gray-700 ${id ? 'cursor-not-allowed text-gray-900 border-gray-300' : ''}`}>
+                    <label className="block text-sm font-medium text-gray-700">
                       DB Slug
                     </label>
                     <input
                       type="text"
                       {...register('dbSlug')}
+                      disabled={!!id} // Disable if editing
                       className={`mt-1 block w-full rounded-md border border-gray-200 bg-gray-50 text-gray-800 p-2 
-                      focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50
-                      ${id ? 'cursor-not-allowed bg-gray-200 text-gray-500 border-gray-300' : ''}`}
-                      disabled={id ? true : false}
+                        focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50
+                        ${id ? 'cursor-not-allowed bg-gray-200 text-gray-500' : ''}`}
                     />
                     {errors?.dbSlug && (
                       <p className="text-red-500 text-xs mt-1">{errors?.dbSlug?.message}</p>
@@ -565,7 +625,7 @@ export default function Home() {
                     <div className="flex items-center gap-2 mt-1">
                       <div className="w-24">
                         <Select
-                          value={adminCountryCode || ''} // Ensure value is always a string
+                          value={adminCountryCode || ''}
                         >
                           <SelectTrigger className="h-9 text-sm border-gray-200 bg-gray-50 text-gray-800 focus:border-gray-300 focus:ring focus:ring-gray-100 focus:ring-opacity-50">
                             <SelectValue placeholder="+XX">
@@ -592,20 +652,18 @@ export default function Home() {
                               <CommandInput
                                 placeholder="Search country..."
                                 value={searchQuery}
-                                onValueChange={(value) => {
-                                  setSearchQuery(value || '');
-                                }}
+                                onValueChange={(value) => setSearchQuery(value || '')}
                                 className="h-9"
                               />
                               <CommandList className="max-h-60 overflow-y-auto">
                                 <CommandEmpty>No country found.</CommandEmpty>
                                 {countries.map((country) => (
                                   <CommandItem
-                                    key={country.countryCode} // Unique key
-                                    value={`${country.name} ${country.code}`} // Use both name and code for filtering
+                                    key={country.countryCode}
+                                    value={`${country.name} ${country.code}`}
                                     onSelect={() => {
                                       setValue('adminCountryCode', country.code);
-                                      setSearchQuery(''); // Reset search query on selection
+                                      setSearchQuery('');
                                     }}
                                   >
                                     <div className="flex items-center gap-2">

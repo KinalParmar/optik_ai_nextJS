@@ -287,6 +287,8 @@ export default function UsersList() {
       'Job Role Description'
     ];
 
+    // Fallback sample data if leads is empty
+    // Transform leads into the correct format (array of arrays) and escape fields
     const transformLeadToCSVRow = (lead) => {
       const row = [
         lead?.firstName || '',
@@ -302,14 +304,19 @@ export default function UsersList() {
         lead?.industry || '',
         lead?.jobRoleDescription || ''
       ];
+      // Escape fields by wrapping in quotes and replacing internal quotes with double quotes
       return row.map(field => `"${String(field).replace(/"/g, '""')}"`);
     };
 
-    const sampleData = leads?.length > 0 ? leads.map(transformLeadToCSVRow) : [];
+    // Use leads if available, otherwise use fallback sample data
+    const sampleData = leads?.length > 0
+      && leads.map(transformLeadToCSVRow)
+      
 
+    // Combine headers and sample data into CSV rows
     const csvRows = [
-      headers.join(','),
-      ...sampleData.map(row => row.join(','))
+      headers.join(','), // Header row
+      ...sampleData.map(row => row.join(',')) // Sample data rows
     ];
 
     const csvContent = csvRows.join('\n');
@@ -478,34 +485,20 @@ export default function UsersList() {
                       <p className="text-[#64748B] font-bold">{selectedLead?.jobTitle || '-'}</p>
                     </div>
                     <div className="space-y-4">
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">First Name:</strong> {selectedLead?.firstName || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Last Name:</strong> {selectedLead?.lastName || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Email:</strong> {selectedLead?.email || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Job Title:</strong> {selectedLead?.jobTitle || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Company Name:</strong> {selectedLead?.company_name || '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">Company LinkedIn:</strong>{' '}
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Company:</strong>{' '}
                         {selectedLead?.company_linkedin ? (
-                          <a href={selectedLead?.company_linkedin} target="_blank" rel="noopener noreferrer" className="text-[#6366F1] hover:text-[#5457E5]">{selectedLead?.company_linkedin}</a>
-                        ) : '-'}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">LinkedIn:</strong>{' '}
+                          <a href={selectedLead?.company_linkedin} target="_blank" rel="noopener noreferrer" className="text-[#6366F1] hover:text-[#5457E5]">{selectedLead?.company_name || '-'}</a>
+                        ) : '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Email:</strong> {selectedLead?.email || '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Job Title:</strong> {selectedLead?.jobTitle || '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Summary:</strong> {selectedLead?.summary || '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">LinkedIn:</strong>{' '}
                         {selectedLead?.linkedinUrl ? (
                           <a href={selectedLead?.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-[#6366F1] hover:text-[#5457E5]">{selectedLead?.linkedinUrl}</a>
-                        ) : '-'}
-                      </p>
-                      {/* Add other fields if they exist in the response */}
+                        ) : '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Industry:</strong> {selectedLead?.industry || '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Job Role Description:</strong> {selectedLead?.jobRoleDescription || '-'}</p>
+                      <p className="pb-2 border-b border-[#EEEEEE]"><strong className="text-[#334155] font-extrabold">Created At:</strong> {selectedLead?.createdAt ? moment(selectedLead?.createdAt).format('DD-MM-YYYY') : '-'}</p>
                     </div>
                   </div>
                 </div>

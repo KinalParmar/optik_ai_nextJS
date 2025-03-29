@@ -1,4 +1,5 @@
 import axiosInstance from "@/src/Interceptor/AdminInterceptor";
+import { showErrorToast } from "@/Components/Toaster";
 
 const dbSlug = typeof window !== 'undefined' ? localStorage?.getItem('dbSlug') || "" : "";
 
@@ -13,6 +14,7 @@ export const createUser = async (formData) => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
     }
 }
@@ -29,6 +31,7 @@ export const updateUser = async (id, formData) => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
     }
 }
@@ -44,6 +47,7 @@ export const deleteUser = async (id) => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
     }
 }
@@ -60,6 +64,7 @@ export const getUsers = async () => {
         return response.data;
       } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
       }
 }

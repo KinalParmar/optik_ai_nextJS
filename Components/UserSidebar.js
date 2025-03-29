@@ -16,10 +16,9 @@ const poppins = Poppins({
 const sidebarItems = [
   { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup, permissionKey: 'leads' },
   { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus, permissionKey: 'newleads' },
-  { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup, permissionKey: 'users' },
 ];
 
-export default function Sidebar() {
+export default function UserSidebar() {
   const pathname = usePathname();
   const [userData, setUserData] = useState(null);
 
@@ -35,31 +34,32 @@ export default function Sidebar() {
   const permissions = userData?.permissions || {};
   const isAdmin = userData?.isAdmin || false;
 
-  // Helper function to check if 'read' is in the permission array
-  const hasReadPermission = (permissionArray) => {
-    return Array.isArray(permissionArray) && permissionArray.includes('read');
+  // Helper function to check if permissions are valid (not empty and not just update/delete)
+  const hasValidPermissions = (permissionArray) => {
+    if (!Array.isArray(permissionArray) || permissionArray.length === 0) return false;
+    const filteredPerms = permissionArray.filter(
+      perm => perm !== 'update' && perm !== 'delete'
+    );
+    return filteredPerms.length > 0;
   };
 
   // Filter sidebar items based on permissions
   const filteredSidebarItems = sidebarItems.filter((item) => {
     const permissionArray = permissions?.[item?.permissionKey] || [];
-
+    
     if (item?.permissionKey === 'users') {
-      // Show 'User' if user is admin or has 'read' in users permissions
-      return isAdmin || hasReadPermission(permissionArray);
+      return isAdmin || (permissions?.hasOwnProperty('users') && hasValidPermissions(permissionArray));
     }
-
+    
     if (item?.permissionKey === 'newleads') {
-      // Show 'New Lead' if 'newleads' has 'read' or 'leads' has 'create'
-      return hasReadPermission(permissionArray) || 
-             (Array.isArray(permissions?.['leads']) && permissions?.['leads']?.includes('create'));
+      return hasValidPermissions(permissionArray) || 
+             (permissions?.['leads']?.includes('create'));
     }
-
+    
     if (item?.permissionKey === 'leads') {
-      // Show 'Leads' only if 'leads' has 'read'
-      return hasReadPermission(permissionArray);
+      return hasValidPermissions(permissionArray);
     }
-
+    
     return false; // Default case, though all items are covered above
   });
 

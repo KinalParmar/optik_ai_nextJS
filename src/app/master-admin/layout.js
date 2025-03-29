@@ -13,7 +13,7 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-export default function SuperMasterAdminLayout({ children }) {
+export default function MasterAdminLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false);
   const [notifications, setNotifications] = useState([]);
