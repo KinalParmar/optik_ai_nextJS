@@ -16,6 +16,7 @@ export const getAllNotificationsDetails = async () => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
     }
 }
 
@@ -35,6 +36,7 @@ export const updateCompany = async (id, companyData) => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
     }
 }
 
@@ -44,6 +46,7 @@ export const deleteCompany = async (id) => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
     }
 }
 
@@ -53,5 +56,6 @@ export const dashStats = async () => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
     }
 }

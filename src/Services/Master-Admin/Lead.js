@@ -6,6 +6,7 @@ export const getAllLead = async () => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
     }
 }
@@ -17,6 +18,7 @@ export const deleteLead = async (id) => {
         return resp.data;
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
     }
 }
@@ -28,6 +30,7 @@ export const uploadCSV = async (formData) => {
         return response
       } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         throw error;
       }
 }

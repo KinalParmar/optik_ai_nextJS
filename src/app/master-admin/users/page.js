@@ -36,7 +36,6 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const router = useRouter();
 
   const [leadsToggle, setLeadsToggle] = useState(false);
@@ -71,7 +70,7 @@ export default function Users() {
       email: '',
       password: '',
       confirmPassword: '',
-      editingUser: null, // Used for conditional validation
+      editingUser: null,
     },
   });
 
@@ -79,16 +78,15 @@ export default function Users() {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await getAllCompany();
-      if (data) {
-        setUsers(data || []);
+      if (data && Array.isArray(data)) {
+        setUsers(data);
         showSuccessToast('Companies fetched successfully');
       } else {
+        setUsers([]);
         showErrorToast('Failed to fetch companies');
       }
     } catch (err) {
-      setError('Failed to fetch companies');
       showErrorToast('Failed to fetch companies');
       console.error('Error fetching companies:', err);
     } finally {
@@ -100,25 +98,21 @@ export default function Users() {
   const handleUpdateCompany = async (id, updatedData) => {
     try {
       setLoading(true);
-      setError(null);
+      if (!id) {
+        throw new Error('Company ID is undefined');
+      }
 
-      // Send update request
       const response = await updateCompany(id, updatedData);
 
       if (response?.success) {
-        // Refresh the company list
         await fetchCompanies();
-        setLoading(false);
         showSuccessToast(response?.message || 'Company updated successfully');
-        resetForm(); // Reset the form after successful update
+        resetForm();
       } else {
-        setLoading(false);
-        showErrorToast(response?.message || 'Failed to update company');
+        // showErrorToast(response?.message || 'Failed to update company');
       }
     } catch (err) {
-      setLoading(false);
-      setError('Failed to update company');
-      showErrorToast('Failed to update company');
+      // showErrorToast('Failed to update company');
       console.error('Error updating company:', err);
     } finally {
       setLoading(false);
@@ -129,26 +123,35 @@ export default function Users() {
   const onSubmitUserForm = async (data) => {
     try {
       setLoading(true);
-      setError(null);
-
-      // Get the current company object
       const company = editingUser;
+      if (!company?._id) {
+        throw new Error('Editing user ID is undefined');
+      }
 
-      // Construct the full company object with updated admin details
       const updatedData = {
-        ...company,
-        admin: {
-          ...company.admin,
-          name: data.name,
-          email: data.email,
-          ...(data.password && { password: data.password }), // Only include password if provided
-        },
+        dbSlug: company.dbSlug,
+        name: company.name,
+        regNo: company.regNo,
+        email: company.email,
+        address: company.address,
+        pincode: company.pincode,
+        adminName: data.name,
+        adminEmail: data.email,
+        adminPassword: data.password || undefined, // Only include if provided
+        adminPhoneNumber: company.admin.phoneNumber,
+        adminCountryCode: company.admin.countryCode,
+        isAdmin: company.admin.isAdmin,
+        permissions: company.admin.permissions,
+        totalUsersAllowed: company.totalUsersAllowed,
+        isEnabled: company.isEnabled,
+        paymentStatus: company.paymentStatus,
+        paymentAmount: company.paymentAmount,
+        nextPaymentDate: company.nextPaymentDate,
       };
 
-      await handleUpdateCompany(editingUser?.id, updatedData);
+      await handleUpdateCompany(company._id, updatedData);
     } catch (err) {
-      setError('Failed to update company admin');
-      showErrorToast('Failed to update company admin');
+      // showErrorToast('Failed to update company admin');
       console.error('Error updating company admin:', err);
     } finally {
       setLoading(false);
@@ -159,26 +162,41 @@ export default function Users() {
   const handleUpdatePermissions = async (id) => {
     try {
       setLoading(true);
-      setError(null);
-  
-      // Find the company being updated
-      const company = users.find((user) => user.id === id);
-  
-      // Construct the full company object with updated permissions
+      if (!id) {
+        throw new Error('Company ID is undefined in handleUpdatePermissions');
+      }
+
+      const company = users.find((user) => user._id === id);
+      if (!company) {
+        throw new Error('Company not found in users list');
+      }
+
       const updatedData = {
-        ...company,
-        admin: {
-          ...company.admin,
-          permissions: {
-            leads: leadsToggle ? leadsPermissions : [],
-            users: usersToggle ? usersPermissions : [],
-          },
+        dbSlug: company.dbSlug,
+        name: company.name,
+        regNo: company.regNo,
+        email: company.email,
+        address: company.address || '',
+        pincode: company.pincode || '',
+        adminName: company.admin.name,
+        adminEmail: company.admin.email,
+        adminPassword: undefined, // Not included unless explicitly set
+        adminPhoneNumber: company.admin.phoneNumber || '',
+        adminCountryCode: company.admin.countryCode || '',
+        isAdmin: company.admin.isAdmin,
+        permissions: {
+          leads: leadsToggle ? leadsPermissions : [],
+          users: usersToggle ? usersPermissions : [],
         },
+        totalUsersAllowed: company.totalUsersAllowed,
+        isEnabled: company.isEnabled,
+        paymentStatus: company.paymentStatus || '',
+        paymentAmount: company.paymentAmount,
+        nextPaymentDate: company.nextPaymentDate || '',
       };
-  
+
       await handleUpdateCompany(id, updatedData);
     } catch (err) {
-      setError('Failed to update permissions');
       showErrorToast('Failed to update permissions');
       console.error('Error updating permissions:', err);
     } finally {
@@ -208,7 +226,7 @@ export default function Users() {
     setValue('email', user?.admin?.email || '');
     setValue('password', '');
     setValue('confirmPassword', '');
-    setValue('editingUser', user); // For conditional validation
+    setValue('editingUser', user);
     setShowForm(true);
     setShowRoles(false);
   };
@@ -235,16 +253,16 @@ export default function Users() {
   };
 
   const filteredUsers = users?.filter((user) =>
-  (user?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-    user?.admin?.email?.toLowerCase()?.includes(searchTerm.toLowerCase()))
+    (user?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+      user?.admin?.email?.toLowerCase()?.includes(searchTerm.toLowerCase()))
   ) || [];
 
   useEffect(() => {
-    const getToken = localStorage?.getItem("token");
+    const getToken = localStorage?.getItem('token');
     if (!getToken) {
       router.push('/master-admin-login');
     }
-  }, [])
+  }, []);
 
   return (
     <div>
@@ -267,9 +285,6 @@ export default function Users() {
               </div>
             )}
           </div>
-
-          {loading && <p className="text-center text-gray-600">Loading...</p>}
-          {error && <p className="text-center text-red-500">{error}</p>}
 
           {showForm && (
             <div className="bg-white rounded-[4px] border border-[#E2E8F0] p-6">
@@ -359,13 +374,13 @@ export default function Users() {
                   >
                     <FiArrowLeft className="w-5 h-5 text-gray-500" />
                   </button>
-                  <h2 className="text-xl font-semibold text-gray-700"> Permissions</h2>
+                  <h2 className="text-xl font-semibold text-gray-700">Permissions</h2>
                 </div>
 
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    handleUpdatePermissions(editingUser?.id);
+                    handleUpdatePermissions(editingUser?._id);
                   }}
                   className="w-80 mx-auto space-y-6"
                 >
@@ -438,7 +453,7 @@ export default function Users() {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || !editingUser?._id}
                       className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-md hover:opacity-90 transition-all duration-200 text-sm font-semibold disabled:opacity-50"
                     >
                       {loading ? 'Saving...' : 'Save Permissions'}
@@ -472,14 +487,15 @@ export default function Users() {
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <tr
-                        key={user?.id}
+                        key={user?._id}
                         className="border-t border-[#E2E8F0] hover:bg-[#F8FAFF] transition-colors duration-200"
                       >
-                        <td className="px-4 py-3 font-medium text-gray-800">{user?.name}</td>
-                        <td className="px-4 py-3">{user?.dbSlug}</td>
-                        <td className="px-4 py-3 text-gray-600">{user?.admin?.email}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{user?.name || '-'}</td>
+                        <td className="px-4 py-3">{user?.dbSlug || '-'}</td>
+                        <td className="px-4 py-3 text-gray-600">{user?.admin?.email || '-'}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
+                            {/* Uncomment if you want to re-enable Edit button */}
                             {/* <button
                               onClick={() => handleEdit(user)}
                               className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"

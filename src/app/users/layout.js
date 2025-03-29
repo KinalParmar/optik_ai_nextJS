@@ -1,7 +1,7 @@
 
 'use client';
 import { Inter } from 'next/font/google';
-import Sidebar from '@/components/Sidebar';
+import UserSidebar from '@/components/UserSidebar';
 import { useState } from 'react';
 import { FiBell, FiUser } from 'react-icons/fi';
 import Image from 'next/image';
@@ -13,7 +13,7 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-export default function AdminLayout({ children }) {
+export default function UserLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false); // State to toggle between image and icon
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className={`${inter.variable} flex min-h-screen bg-[#F8F9FE]`}>
-      <Sidebar />
+      <UserSidebar />
       <main className="flex-1 ml-[260px] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-[#E2E8F0] shadow-sm">
           <div className="flex items-center">

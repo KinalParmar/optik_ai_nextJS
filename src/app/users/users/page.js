@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
-import en from 'react-phone-number-input/locale/en';
+import en from 'react-phone-number-input/locale/en'; // Import English labels
 import 'react-phone-number-input/style.css';
 
 // Define Yup validation schema for user creation/editing
@@ -42,7 +42,7 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // State for country code search query
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,7 +52,7 @@ export default function Users() {
     phoneNumber: '',
     permissions: {
       leads: [],
-      // Removed users permissions from initial state
+      users: [],
     },
   });
   const router = useRouter();
@@ -64,11 +64,13 @@ export default function Users() {
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) || {} : {};
   const userPermissions = user?.permissions?.users || [];
 
+  // Define permission checks
   const canRead = true || userPermissions?.includes('read');
   const canUpdate = true || userPermissions?.includes('update');
   const canDelete = true || userPermissions?.includes('delete');
   const canCreate = true || userPermissions?.includes('create');
 
+  // useForm for user creation/editing form
   const {
     register: registerUser,
     handleSubmit: handleSubmitUser,
@@ -90,6 +92,7 @@ export default function Users() {
 
   const countryCode = watch('countryCode');
 
+  // useForm for roles form
   const {
     handleSubmit: handleSubmitRoles,
     reset: resetRoles,
@@ -98,6 +101,7 @@ export default function Users() {
     defaultValues: {},
   });
 
+  // Get the list of countries with their calling codes and names
   const countryList = getCountries();
   if (!countryList || countryList.length === 0) {
     console.error('Error: No countries found from getCountries()');
@@ -111,6 +115,7 @@ export default function Users() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // Debugging logs
   console.log('Search Query:', searchQuery);
   console.log('Countries:', countries);
   console.log('Current countryCode:', countryCode);
@@ -166,7 +171,7 @@ export default function Users() {
         ...prev,
         [name]: value,
       }));
-      setUserValue(name, value);
+      setUserValue(name, value); // Update react-hook-form values for user form
     }
   };
 
@@ -240,7 +245,7 @@ export default function Users() {
       confirmPassword: '',
       countryCode: user?.countryCode ?? '',
       phoneNumber: user?.phoneNumber ?? '',
-      permissions: user?.permissions ?? { leads: [] }, // Removed users from permissions
+      permissions: user?.permissions ?? { leads: [], users: [] },
     });
     setUserValue('name', user?.name ?? '');
     setUserValue('email', user?.email ?? '');
@@ -261,7 +266,7 @@ export default function Users() {
       confirmPassword: '',
       countryCode: user?.countryCode ?? '',
       phoneNumber: user?.phoneNumber ?? '',
-      permissions: user?.permissions ?? { leads: [] }, // Removed users from permissions
+      permissions: user?.permissions ?? { leads: [], users: [] },
     });
     setShowRoles(true);
     setShowForm(false);
@@ -296,7 +301,7 @@ export default function Users() {
       confirmPassword: '',
       countryCode: '',
       phoneNumber: '',
-      permissions: { leads: [] }, // Removed users from permissions
+      permissions: { leads: [], users: [] },
     });
     setEditingUser(null);
     setShowForm(false);
@@ -414,7 +419,9 @@ export default function Users() {
                         </label>
                         <div className="flex items-center gap-2">
                           <div className="w-[90px]">
-                            <Select value={countryCode || ''}>
+                            <Select
+                              value={countryCode || ''}
+                            >
                               <SelectTrigger className="h-[34px] text-[13px] border-[#E2E8F0] bg-white text-[#334155] focus:border-[#6366F1] focus:ring-0">
                                 <SelectValue placeholder="+XX">
                                   {countryCode ? (
@@ -530,7 +537,9 @@ export default function Users() {
                           placeholder="Confirm new password"
                         />
                         {userErrors?.confirmPassword && (
-                          <p className="text-red-500 text-sm mt-1">{userErrors?.confirmPassword?.message}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {userErrors?.confirmPassword?.message}
+                          </p>
                         )}
                       </div>
                       <div className="pt-2">
@@ -583,7 +592,27 @@ export default function Users() {
                           </div>
                         ))}
                       </div>
-                      {/* Removed Users Permissions section */}
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">Users Permissions</h3>
+                        {permissionOptions?.map((permission) => (
+                          <div key={`users-${permission}`} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`users-${permission}`}
+                              name={`users-${permission}`}
+                              checked={formData?.permissions?.users?.includes(permission) ?? false}
+                              onChange={handleInputChange}
+                              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <label
+                              htmlFor={`users-${permission}`}
+                              className="text-sm font-medium text-gray-700 cursor-pointer"
+                            >
+                              {permission?.charAt(0)?.toUpperCase() + permission?.slice(1)}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                       <div className="pt-2">
                         <button
                           type="submit"

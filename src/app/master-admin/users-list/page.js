@@ -247,7 +247,7 @@ export default function UsersList() {
           <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h4 className="text-xl font-extrabold text-[#334155]">Customer Info</h4>
+                <h4 className="text-xl font-extrabold text-[#334155]">Info</h4>
                 <button
                   onClick={() => setSelectedLead(null)}
                   className="text-gray-400 hover:text-gray-600"
