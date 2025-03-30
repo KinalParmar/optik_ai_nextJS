@@ -75,7 +75,6 @@ export default function AdminLogin() {
       const response = await Login?.Loginapi(data);
       if (response?.success) {
         const { user, token } = response;
-        console.log("user", user);
         localStorage?.setItem("Admintoken", token);
         localStorage?.setItem("user", JSON.stringify(user));
         // const passwordResetStatus = await checkPasswordResetRequired();

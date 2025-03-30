@@ -1,4 +1,5 @@
 import axiosInstance from "@/src/Interceptor/AdminInterceptor";
+import { showErrorToast } from "@/Components/Toaster";
 
 const dbSlug = typeof window !== 'undefined' ? localStorage?.getItem('dbSlug') || "" : "";
 
@@ -12,6 +13,7 @@ export const createNewLeadAdmin = async (formData) => {
         });
         return resp.data;
     } catch (error) {
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         console.error(error);
         throw error;
     }
@@ -28,6 +30,7 @@ export const generateSummaryLeadById = async (id) => {
         });
         return resp.data;
     } catch (error) {
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         console.error(error);
         throw error;
     }
@@ -45,6 +48,7 @@ export const uploadLeadAdmin = async (formData) => {
         return response
     } catch (error) {
         console.error(error);
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         throw error;
     }
 }

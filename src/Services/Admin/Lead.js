@@ -1,4 +1,5 @@
 import axiosInstance from "@/src/Interceptor/AdminInterceptor";
+import { showErrorToast } from "@/Components/Toaster";
 
 const dbSlug = typeof window !== 'undefined' ? localStorage?.getItem('dbSlug') || "" : "";
 
@@ -12,6 +13,7 @@ export const getAllLeadAdmin = async () => {
         });
         return resp.data;
     } catch (error) {
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         console.error(error);
         throw error;
     }
@@ -28,6 +30,7 @@ export const deleteLeadAdmin = async (id) => {
         });
         return resp.data;
     } catch (error) {
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         console.error(error);
         throw error;
     }
@@ -43,6 +46,7 @@ export const updateLeadAdmin = async (id, data) => {
         });
         return resp.data;
     } catch (error) {
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         console.error(error);
         throw error;
     }
@@ -59,6 +63,7 @@ export const uploadLeadAdmin = async (formData) => {
         // Assuming you want to refresh leads after upload
         return response
       } catch (error) {
+        showErrorToast(error?.response?.data?.message || "An error occurred");
         console.error(error);
         throw error;
       }

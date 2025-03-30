@@ -250,7 +250,6 @@ export default function Home() {
     try {
       setLoading(true);
       const response = await getAllCompany();
-      console.log('Fetched companies:', response);
       if (response) {
         const uniqueCompanies = Array.isArray(response) ? response.filter(
           (company, index, self) => company?._id && self.findIndex(c => c._id === company._id) === index

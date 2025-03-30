@@ -5,7 +5,6 @@ const endpoint = process.env.NEXT_PUBLIC_BASE_URL;
 
 const Login = {
   async Loginapi(data) {
-    console.log("1111");
     try {
       const resp = await axios.post(`${endpoint}tenant/auth/login`, data, {
         headers: {
