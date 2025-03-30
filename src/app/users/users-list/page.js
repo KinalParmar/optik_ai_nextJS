@@ -10,6 +10,23 @@ import { FiCheck } from "react-icons/fi";
 import { useRouter } from 'next/navigation';
 import { FiX } from "react-icons/fi";
 import { uploadLeadAdmin, updateLeadAdmin, getAllLeadAdmin, deleteLeadAdmin } from '@/src/Services/Admin/Lead';
+import { checkPasswordResetRequired, resetUserPassword } from '@/src/Services/Admin/Users';
+import * as Yup from "yup";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+
+const passwordSchema = Yup.object().shape({
+  password: Yup.string()
+    .required("Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      "Password must contain uppercase, lowercase, number and special character"
+    ),
+  confirmPassword: Yup.string()
+    .required("Confirm Password is required")
+    .oneOf([Yup.ref("password")], "Passwords must match"),
+});
 
 export default function UsersList() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +40,17 @@ export default function UsersList() {
   const [rolesFormData, setRolesFormData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState([]);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const router = useRouter();
+
+  const {
+    register: passwordRegister,
+    handleSubmit: handlePasswordSubmit,
+    formState: { errors: passwordErrors },
+    reset: resetPasswordForm,
+  } = useForm({
+    resolver: yupResolver(passwordSchema),
+  });
 
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : {};
   const leadPermissions = user?.permissions?.leads || [];
@@ -265,11 +292,42 @@ export default function UsersList() {
   };
 
   useEffect(() => {
-    const getToken = localStorage?.getItem("Admintoken");
-    if (!getToken) {
-      router.push('/admin-login');
-    }
+    const checkAuth = async () => {
+      const getToken = localStorage?.getItem("Admintoken");
+      if (!getToken) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const passwordResetStatus = await checkPasswordResetRequired();
+        if (passwordResetStatus?.resetPwd) {
+          setShowPasswordModal(true);
+        }
+      } catch (error) {
+        console.error('Error checking password reset status:', error);
+      }
+    };
+
+    checkAuth();
   }, []);
+
+  const onPasswordSubmit = async (data) => {
+    try {
+      setLoading(true);
+      await resetUserPassword(user._id, data.password);
+      showSuccessToast("Password set successfully");
+      setShowPasswordModal(false);
+      resetPasswordForm();
+      localStorage.clear();
+      router?.push("/login");
+    } catch (error) {
+      showErrorToast("Failed to set password");
+      console.error("Password set failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const downloadDummyCSV = () => {
     const headers = [
@@ -740,6 +798,60 @@ export default function UsersList() {
                   <button onClick={confirmDeleteLead} className="px-4 py-2 bg-[#EF4444] text-white rounded hover:bg-[#DC2626] transition-all duration-200 text-sm font-bold" disabled={loading}>
                     {loading ? 'Deleting...' : 'Delete'}
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Password Reset Modal */}
+          {showPasswordModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg w-[450px] max-w-[90%] max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <h2 className="text-xl font-bold text-[#334155] mb-4">Set New Password</h2>
+                  <form onSubmit={handlePasswordSubmit(onPasswordSubmit)}>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          {...passwordRegister("password")}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        {passwordErrors.password && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {passwordErrors.password.message}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          {...passwordRegister("confirmPassword")}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        {passwordErrors.confirmPassword && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {passwordErrors.confirmPassword.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-6 flex justify-end gap-3">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      >
+                        {loading ? "Setting Password..." : "Set Password"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

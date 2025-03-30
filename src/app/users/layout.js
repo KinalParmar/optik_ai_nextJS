@@ -1,28 +1,30 @@
-
-'use client';
-import { Inter } from 'next/font/google';
-import UserSidebar from '@/components/UserSidebar';
-import { useState } from 'react';
-import { FiBell, FiUser } from 'react-icons/fi';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { showErrorToast, showSuccessToast } from '@/Components/Toaster';
+"use client";
+import { Inter } from "next/font/google";
+import UserSidebar from "@/components/UserSidebar";
+import { useState } from "react";
+import { FiBell, FiUser } from "react-icons/fi";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { showErrorToast, showSuccessToast } from "@/Components/Toaster";
 
 const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export default function UserLayout({ children }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [useIconFallback, setUseIconFallback] = useState(false); // State to toggle between image and icon
   const router = useRouter();
-  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null;
+  const user =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user"))
+      : null;
 
   const handleSignOut = () => {
     localStorage.clear();
-    showSuccessToast('Signed out successfully');
-    router.push('/admin-login');
+    showSuccessToast("Signed out successfully");
+    router.push("/login");
   };
 
   // Function to handle image load error and switch to icon
@@ -41,7 +43,10 @@ export default function UserLayout({ children }) {
                 <FiUser className="w-10 h-10 text-[#64748B] rounded-full p-1 bg-gray-200" />
               ) : (
                 <Image
-                  src={process.env.NEXT_PUBLIC_PROFILE_IMAGE || '/profile-placeholder.jpg'} // Use environment variable or fallback
+                  src={
+                    process.env.NEXT_PUBLIC_PROFILE_IMAGE ||
+                    "/profile-placeholder.jpg"
+                  } // Use environment variable or fallback
                   alt="Profile"
                   width={40}
                   height={40}
@@ -78,9 +83,7 @@ export default function UserLayout({ children }) {
             </button>
           </div>
         </div>
-        <div className="flex-1 p-6">
-          {children}
-        </div>
+        <div className="flex-1 p-6">{children}</div>
       </main>
     </div>
   );

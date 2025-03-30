@@ -1,55 +1,77 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { FiSearch, FiEdit2, FiTrash2, FiUserPlus, FiArrowLeft } from 'react-icons/fi';
-import { createUser, updateUser, deleteUser, getUsers } from '../../../Services/Admin/Users';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
-import { showSuccessToast, showErrorToast } from '@/Components/Toaster';
-import DotLoader from '@/Components/DotLoader';
-import { useRouter } from 'next/navigation';
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
-import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
-import en from 'react-phone-number-input/locale/en'; // Import English labels
-import 'react-phone-number-input/style.css';
+"use client";
+import { useState, useEffect } from "react";
+import {
+  FiSearch,
+  FiEdit2,
+  FiTrash2,
+  FiUserPlus,
+  FiArrowLeft,
+} from "react-icons/fi";
+import {
+  createUser,
+  updateUser,
+  deleteUser,
+  getUsers,
+} from "../../../Services/Admin/Users";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as Yup from "yup";
+import { showSuccessToast, showErrorToast } from "@/Components/Toaster";
+import DotLoader from "@/Components/DotLoader";
+import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandItem,
+  CommandEmpty,
+} from "@/components/ui/command";
+import { getCountries, getCountryCallingCode } from "react-phone-number-input";
+import en from "react-phone-number-input/locale/en"; // Import English labels
+import "react-phone-number-input/style.css";
 
 // Define Yup validation schema for user creation/editing
 const userSchema = Yup.object().shape({
   name: Yup.string()
-    .required('Name is required')
+    .required("Name is required")
     .trim()
-    .notOneOf([''], 'Name cannot be empty'),
+    .notOneOf([""], "Name cannot be empty"),
   email: Yup.string()
-    .email('Invalid email format')
-    .required('Email is required'),
+    .email("Invalid email format")
+    .required("Email is required"),
   password: Yup.string()
-    .required('Password is required')
-    .notOneOf([''], 'Password cannot be empty'),
+    .required("Password is required")
+    .notOneOf([""], "Password cannot be empty"),
   confirmPassword: Yup.string()
-    .required('Confirm Password is required')
-    .oneOf([Yup.ref('password')], 'Passwords must match'),
-  countryCode: Yup.string().required('Country code is required'),
+    .required("Confirm Password is required")
+    .oneOf([Yup.ref("password")], "Passwords must match"),
+  countryCode: Yup.string().required("Country code is required"),
   phoneNumber: Yup.string()
-    .required('Phone number is required')
-    .matches(/^[0-9]{7,15}$/, 'Phone number must be between 7 and 15 digits'),
+    .required("Phone number is required")
+    .matches(/^[0-9]{7,15}$/, "Phone number must be between 7 and 15 digits"),
 });
 
 // Define Yup validation schema for roles (no required fields)
 const rolesSchema = Yup.object().shape({});
 
 export default function Users() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // State for country code search query
+  const [searchQuery, setSearchQuery] = useState(""); // State for country code search query
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    countryCode: '',
-    phoneNumber: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    countryCode: "",
+    phoneNumber: "",
     permissions: {
       leads: [],
       users: [],
@@ -58,17 +80,24 @@ export default function Users() {
   const router = useRouter();
   const [editingUser, setEditingUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const [modal, setModal] = useState({ show: false, message: '', type: 'error' });
+  const [modal, setModal] = useState({
+    show: false,
+    message: "",
+    type: "error",
+  });
   const [deleteModal, setDeleteModal] = useState({ show: false, userId: null });
   const [loading, setLoading] = useState(false);
-  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) || {} : {};
+  const user =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user")) || {}
+      : {};
   const userPermissions = user?.permissions?.users || [];
 
   // Define permission checks
-  const canRead = true || userPermissions?.includes('read');
-  const canUpdate = true || userPermissions?.includes('update');
-  const canDelete = true || userPermissions?.includes('delete');
-  const canCreate = true || userPermissions?.includes('create');
+  const canRead = true || userPermissions?.includes("read");
+  const canUpdate = true || userPermissions?.includes("update");
+  const canDelete = true || userPermissions?.includes("delete");
+  const canCreate = true || userPermissions?.includes("create");
 
   // useForm for user creation/editing form
   const {
@@ -81,22 +110,19 @@ export default function Users() {
   } = useForm({
     resolver: yupResolver(userSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      countryCode: '',
-      phoneNumber: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      countryCode: "",
+      phoneNumber: "",
     },
   });
 
-  const countryCode = watch('countryCode');
+  const countryCode = watch("countryCode");
 
   // useForm for roles form
-  const {
-    handleSubmit: handleSubmitRoles,
-    reset: resetRoles,
-  } = useForm({
+  const { handleSubmit: handleSubmitRoles, reset: resetRoles } = useForm({
     resolver: yupResolver(rolesSchema),
     defaultValues: {},
   });
@@ -104,7 +130,7 @@ export default function Users() {
   // Get the list of countries with their calling codes and names
   const countryList = getCountries();
   if (!countryList || countryList.length === 0) {
-    console.error('Error: No countries found from getCountries()');
+    console.error("Error: No countries found from getCountries()");
   }
 
   const countries = countryList
@@ -116,14 +142,14 @@ export default function Users() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // Debugging logs
-  console.log('Search Query:', searchQuery);
-  console.log('Countries:', countries);
-  console.log('Current countryCode:', countryCode);
+  console.log("Search Query:", searchQuery);
+  console.log("Countries:", countries);
+  console.log("Current countryCode:", countryCode);
 
   useEffect(() => {
     const getToken = localStorage?.getItem("Admintoken");
     if (!getToken) {
-      router.push('/admin-login');
+      router.push("/admin-login");
     }
   }, []);
 
@@ -138,16 +164,18 @@ export default function Users() {
       setLoading(true);
       const response = await getUsers();
       if (response) {
-        showSuccessToast('Users fetched successfully');
+        showSuccessToast("Users fetched successfully");
         setUsers(response ?? []);
       } else {
         showErrorToast(response?.message);
       }
     } catch (error) {
       const errorMessage =
-        error?.response?.data?.message || error?.message || 'An error occurred while fetching users';
+        error?.response?.data?.message ||
+        error?.message ||
+        "An error occurred while fetching users";
       // showErrorToast(errorMessage);
-      console?.error('Error fetching users:', error);
+      console?.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
@@ -155,15 +183,16 @@ export default function Users() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e?.target || {};
-    if (type === 'checkbox') {
-      const [section, permission] = name?.split('-') || [];
+    if (type === "checkbox") {
+      const [section, permission] = name?.split("-") || [];
       setFormData((prev) => ({
         ...prev,
         permissions: {
           ...prev?.permissions,
           [section]: checked
             ? [...(prev?.permissions?.[section] || []), permission]
-            : prev?.permissions?.[section]?.filter((p) => p !== permission) ?? [],
+            : prev?.permissions?.[section]?.filter((p) => p !== permission) ??
+              [],
         },
       }));
     } else {
@@ -189,18 +218,22 @@ export default function Users() {
       setLoading(true);
       if (editingUser?.id) {
         await updateUser(editingUser?.id, submitData);
-        showSuccessToast('User updated successfully!');
+        showSuccessToast("User updated successfully!");
       } else {
         await createUser(submitData);
-        showSuccessToast('User created successfully!');
+        showSuccessToast(
+          "User created successfully! Please check your inbox for your ID and password"
+        );
       }
       await fetchUsers();
       resetForm();
     } catch (error) {
       const errorMessage =
-        error?.response?.data?.message || error?.message || 'An error occurred while saving user';
+        error?.response?.data?.message ||
+        error?.message ||
+        "An error occurred while saving user";
       // showErrorToast(errorMessage);
-      console?.error('Failed to submit user:', error);
+      console?.error("Failed to submit user:", error);
     } finally {
       setLoading(false);
     }
@@ -219,18 +252,20 @@ export default function Users() {
       setLoading(true);
       if (editingUser?.id) {
         await updateUser(editingUser?.id, submitData);
-        showSuccessToast('User roles updated successfully!');
+        showSuccessToast("User roles updated successfully!");
       } else {
-        showErrorToast('No user selected for updating roles.');
+        showErrorToast("No user selected for updating roles.");
         return;
       }
       await fetchUsers();
       resetForm();
     } catch (error) {
       const errorMessage =
-        error?.response?.data?.message || error?.message || 'An error occurred while saving roles';
+        error?.response?.data?.message ||
+        error?.message ||
+        "An error occurred while saving roles";
       // showErrorToast(errorMessage);
-      console?.error('Failed to submit roles:', error);
+      console?.error("Failed to submit roles:", error);
     } finally {
       setLoading(false);
     }
@@ -239,20 +274,20 @@ export default function Users() {
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
-      name: user?.name ?? '',
-      email: user?.email ?? '',
-      password: '',
-      confirmPassword: '',
-      countryCode: user?.countryCode ?? '',
-      phoneNumber: user?.phoneNumber ?? '',
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      password: "",
+      confirmPassword: "",
+      countryCode: user?.countryCode ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
       permissions: user?.permissions ?? { leads: [], users: [] },
     });
-    setUserValue('name', user?.name ?? '');
-    setUserValue('email', user?.email ?? '');
-    setUserValue('password', '');
-    setUserValue('confirmPassword', '');
-    setUserValue('countryCode', user?.countryCode ?? '');
-    setUserValue('phoneNumber', user?.phoneNumber ?? '');
+    setUserValue("name", user?.name ?? "");
+    setUserValue("email", user?.email ?? "");
+    setUserValue("password", "");
+    setUserValue("confirmPassword", "");
+    setUserValue("countryCode", user?.countryCode ?? "");
+    setUserValue("phoneNumber", user?.phoneNumber ?? "");
     setShowForm(true);
     setShowRoles(false);
   };
@@ -260,12 +295,12 @@ export default function Users() {
   const handleRoles = (user) => {
     setEditingUser(user);
     setFormData({
-      name: user?.name ?? '',
-      email: user?.email ?? '',
-      password: '',
-      confirmPassword: '',
-      countryCode: user?.countryCode ?? '',
-      phoneNumber: user?.phoneNumber ?? '',
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      password: "",
+      confirmPassword: "",
+      countryCode: user?.countryCode ?? "",
+      phoneNumber: user?.phoneNumber ?? "",
       permissions: user?.permissions ?? { leads: [], users: [] },
     });
     setShowRoles(true);
@@ -280,13 +315,15 @@ export default function Users() {
     try {
       setLoading(true);
       await deleteUser(deleteModal?.userId);
-      showSuccessToast('User deleted successfully!');
+      showSuccessToast("User deleted successfully!");
       await fetchUsers();
     } catch (error) {
       const errorMessage =
-        error?.response?.data?.message || error?.message || 'An error occurred while deleting user';
+        error?.response?.data?.message ||
+        error?.message ||
+        "An error occurred while deleting user";
       // showErrorToast(errorMessage);
-      console?.error('Failed to delete user:', error);
+      console?.error("Failed to delete user:", error);
     } finally {
       setLoading(false);
       setDeleteModal({ show: false, userId: null });
@@ -295,37 +332,38 @@ export default function Users() {
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      countryCode: '',
-      phoneNumber: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      countryCode: "",
+      phoneNumber: "",
       permissions: { leads: [], users: [] },
     });
     setEditingUser(null);
     setShowForm(false);
     setShowRoles(false);
-    setSearchQuery('');
+    setSearchQuery("");
     resetUser();
     resetRoles();
   };
 
   const closeModal = () => {
-    setModal({ show: false, message: '', type: 'error' });
+    setModal({ show: false, message: "", type: "error" });
   };
 
   const closeDeleteModal = () => {
     setDeleteModal({ show: false, userId: null });
   };
 
-  const filteredUsers = users?.filter(
-    (user) =>
-      user?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
-      user?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase())
-  ) ?? [];
+  const filteredUsers =
+    users?.filter(
+      (user) =>
+        user?.name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
+        user?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase())
+    ) ?? [];
 
-  const permissionOptions = ['create', 'read', 'update', 'delete'];
+  const permissionOptions = ["create", "read", "update", "delete"];
 
   return (
     <>
@@ -335,7 +373,9 @@ export default function Users() {
         <>
           <section className="px-8 py-6">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-[20px] font-bold text-[#334155]">Users Management</h1>
+              <h1 className="text-[20px] font-bold text-[#334155]">
+                Users Management
+              </h1>
 
               {!showForm && !showRoles && canCreate && (
                 <div className="flex items-center gap-2.5">
@@ -346,8 +386,8 @@ export default function Users() {
                         type="text"
                         placeholder="Search users..."
                         className="pl-8 pr-3 py-[7px] rounded-[4px] border border-[#E2E8F0] w-[200px] text-[13px] font-medium focus:outline-none focus:border-[#6366F1] placeholder-[#64748B]"
-                        value={searchTerm || ''}
-                        onChange={(e) => setSearchTerm(e?.target?.value || '')}
+                        value={searchTerm || ""}
+                        onChange={(e) => setSearchTerm(e?.target?.value || "")}
                       />
                     </div>
                   )}
@@ -373,27 +413,34 @@ export default function Users() {
                       <FiArrowLeft className="w-5 h-5 text-[#64748B]" />
                     </button>
                     <h2 className="text-xl font-bold text-[#334155]">
-                      {editingUser?.id ? 'Edit User' : 'Create User'}
+                      {editingUser?.id ? "Edit User" : "Create User"}
                     </h2>
                   </div>
 
                   <div className="flex justify-center">
-                    <form onSubmit={handleSubmitUser(onSubmitUser)} className="w-[320px] space-y-4">
+                    <form
+                      onSubmit={handleSubmitUser(onSubmitUser)}
+                      className="w-[320px] space-y-4"
+                    >
                       <div>
                         <label className="block text-[13px] font-bold text-[#334155] mb-1">
                           Name
                         </label>
                         <input
                           type="text"
-                          {...registerUser('name')}
+                          {...registerUser("name")}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            userErrors?.name ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.name
+                              ? "border-red-500"
+                              : "border-[#E2E8F0]"
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Enter name"
                         />
                         {userErrors?.name && (
-                          <p className="text-red-500 text-sm mt-1">{userErrors?.name?.message}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {userErrors?.name?.message}
+                          </p>
                         )}
                       </div>
                       <div>
@@ -402,15 +449,19 @@ export default function Users() {
                         </label>
                         <input
                           type="email"
-                          {...registerUser('email')}
+                          {...registerUser("email")}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            userErrors?.email ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.email
+                              ? "border-red-500"
+                              : "border-[#E2E8F0]"
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Enter email"
                         />
                         {userErrors?.email && (
-                          <p className="text-red-500 text-sm mt-1">{userErrors?.email?.message}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {userErrors?.email?.message}
+                          </p>
                         )}
                       </div>
                       <div>
@@ -419,9 +470,7 @@ export default function Users() {
                         </label>
                         <div className="flex items-center gap-2">
                           <div className="w-[90px]">
-                            <Select
-                              value={countryCode || ''}
-                            >
+                            <Select value={countryCode || ""}>
                               <SelectTrigger className="h-[34px] text-[13px] border-[#E2E8F0] bg-white text-[#334155] focus:border-[#6366F1] focus:ring-0">
                                 <SelectValue placeholder="+XX">
                                   {countryCode ? (
@@ -429,7 +478,9 @@ export default function Users() {
                                       <span className="react-phone-number-input__icon">
                                         <img
                                           src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${
-                                            countries.find((c) => c.code === countryCode)?.countryCode
+                                            countries.find(
+                                              (c) => c.code === countryCode
+                                            )?.countryCode
                                           }.svg`}
                                           alt="flag"
                                           className="w-4 h-3"
@@ -438,7 +489,7 @@ export default function Users() {
                                       <span>{countryCode}</span>
                                     </div>
                                   ) : (
-                                    '+XX'
+                                    "+XX"
                                   )}
                                 </SelectValue>
                               </SelectTrigger>
@@ -448,25 +499,36 @@ export default function Users() {
                                     placeholder="Search country..."
                                     value={searchQuery}
                                     onValueChange={(value) => {
-                                      console.log('CommandInput onValueChange:', value);
-                                      setSearchQuery(value || '');
+                                      console.log(
+                                        "CommandInput onValueChange:",
+                                        value
+                                      );
+                                      setSearchQuery(value || "");
                                     }}
                                     className="h-9 text-[13px]"
                                   />
                                   <CommandList className="max-h-60 overflow-y-auto">
-                                    <CommandEmpty>No country found.</CommandEmpty>
+                                    <CommandEmpty>
+                                      No country found.
+                                    </CommandEmpty>
                                     {countries.map((country) => (
                                       <CommandItem
                                         key={country.countryCode}
                                         value={`${country.name} ${country.code}`}
                                         onSelect={() => {
-                                          console.log('CommandItem onSelect triggered with value:', country.code);
-                                          setUserValue('countryCode', country.code);
+                                          console.log(
+                                            "CommandItem onSelect triggered with value:",
+                                            country.code
+                                          );
+                                          setUserValue(
+                                            "countryCode",
+                                            country.code
+                                          );
                                           setFormData((prev) => ({
                                             ...prev,
                                             countryCode: country.code,
                                           }));
-                                          setSearchQuery('');
+                                          setSearchQuery("");
                                         }}
                                       >
                                         <div className="flex items-center gap-2">
@@ -487,21 +549,27 @@ export default function Users() {
                               </SelectContent>
                             </Select>
                             {userErrors?.countryCode && (
-                              <p className="text-red-500 text-sm mt-1">{userErrors?.countryCode?.message}</p>
+                              <p className="text-red-500 text-sm mt-1">
+                                {userErrors?.countryCode?.message}
+                              </p>
                             )}
                           </div>
                           <div className="flex-1">
                             <input
                               type="text"
-                              {...registerUser('phoneNumber')}
+                              {...registerUser("phoneNumber")}
                               onChange={handleInputChange}
                               className={`w-full px-3 py-2 rounded border ${
-                                userErrors?.phoneNumber ? 'border-red-500' : 'border-[#E2E8F0]'
+                                userErrors?.phoneNumber
+                                  ? "border-red-500"
+                                  : "border-[#E2E8F0]"
                               } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                               placeholder="Enter phone number"
                             />
                             {userErrors?.phoneNumber && (
-                              <p className="text-red-500 text-sm mt-1">{userErrors?.phoneNumber?.message}</p>
+                              <p className="text-red-500 text-sm mt-1">
+                                {userErrors?.phoneNumber?.message}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -512,15 +580,19 @@ export default function Users() {
                         </label>
                         <input
                           type="password"
-                          {...registerUser('password')}
+                          {...registerUser("password")}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            userErrors?.password ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.password
+                              ? "border-red-500"
+                              : "border-[#E2E8F0]"
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Enter new password"
                         />
                         {userErrors?.password && (
-                          <p className="text-red-500 text-sm mt-1">{userErrors?.password?.message}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {userErrors?.password?.message}
+                          </p>
                         )}
                       </div>
                       <div>
@@ -529,10 +601,12 @@ export default function Users() {
                         </label>
                         <input
                           type="password"
-                          {...registerUser('confirmPassword')}
+                          {...registerUser("confirmPassword")}
                           onChange={handleInputChange}
                           className={`w-full px-3 py-2 rounded border ${
-                            userErrors?.confirmPassword ? 'border-red-500' : 'border-[#E2E8F0]'
+                            userErrors?.confirmPassword
+                              ? "border-red-500"
+                              : "border-[#E2E8F0]"
                           } focus:outline-none focus:border-[#6366F1] text-[13px]`}
                           placeholder="Confirm new password"
                         />
@@ -547,7 +621,7 @@ export default function Users() {
                           type="submit"
                           className="w-full px-3 py-2 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white rounded hover:opacity-90 transition-all duration-200 text-[13px] font-bold"
                         >
-                          {editingUser?.id ? 'Update User' : 'Create User'}
+                          {editingUser?.id ? "Update User" : "Create User"}
                         </button>
                       </div>
                     </form>
@@ -566,20 +640,34 @@ export default function Users() {
                     >
                       <FiArrowLeft className="w-5 h-5 text-gray-500" />
                     </button>
-                    <h2 className="text-xl font-semibold text-gray-700">User Roles</h2>
+                    <h2 className="text-xl font-semibold text-gray-700">
+                      User Roles
+                    </h2>
                   </div>
 
                   <div className="flex justify-center">
-                    <form onSubmit={handleSubmitRoles(onSubmitRoles)} className="w-80 space-y-4">
+                    <form
+                      onSubmit={handleSubmitRoles(onSubmitRoles)}
+                      className="w-80 space-y-4"
+                    >
                       <div>
-                        <h3 className="text-sm font-bold text-gray-700 mb-2">Leads Permissions</h3>
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">
+                          Leads Permissions
+                        </h3>
                         {permissionOptions?.map((permission) => (
-                          <div key={`leads-${permission}`} className="flex items-center gap-2">
+                          <div
+                            key={`leads-${permission}`}
+                            className="flex items-center gap-2"
+                          >
                             <input
                               type="checkbox"
                               id={`leads-${permission}`}
                               name={`leads-${permission}`}
-                              checked={formData?.permissions?.leads?.includes(permission) ?? false}
+                              checked={
+                                formData?.permissions?.leads?.includes(
+                                  permission
+                                ) ?? false
+                              }
                               onChange={handleInputChange}
                               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                             />
@@ -587,20 +675,30 @@ export default function Users() {
                               htmlFor={`leads-${permission}`}
                               className="text-sm font-medium text-gray-700 cursor-pointer"
                             >
-                              {permission?.charAt(0)?.toUpperCase() + permission?.slice(1)}
+                              {permission?.charAt(0)?.toUpperCase() +
+                                permission?.slice(1)}
                             </label>
                           </div>
                         ))}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-gray-700 mb-2">Users Permissions</h3>
+                        <h3 className="text-sm font-bold text-gray-700 mb-2">
+                          Users Permissions
+                        </h3>
                         {permissionOptions?.map((permission) => (
-                          <div key={`users-${permission}`} className="flex items-center gap-2">
+                          <div
+                            key={`users-${permission}`}
+                            className="flex items-center gap-2"
+                          >
                             <input
                               type="checkbox"
                               id={`users-${permission}`}
                               name={`users-${permission}`}
-                              checked={formData?.permissions?.users?.includes(permission) ?? false}
+                              checked={
+                                formData?.permissions?.users?.includes(
+                                  permission
+                                ) ?? false
+                              }
                               onChange={handleInputChange}
                               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                             />
@@ -608,7 +706,8 @@ export default function Users() {
                               htmlFor={`users-${permission}`}
                               className="text-sm font-medium text-gray-700 cursor-pointer"
                             >
-                              {permission?.charAt(0)?.toUpperCase() + permission?.slice(1)}
+                              {permission?.charAt(0)?.toUpperCase() +
+                                permission?.slice(1)}
                             </label>
                           </div>
                         ))}
@@ -653,10 +752,10 @@ export default function Users() {
                               className="border-t border-[#E2E8F0] hover:bg-[#F8FAFF] transition-colors duration-200"
                             >
                               <td className="px-4 py-3 text-[13px] font-medium text-[#334155]">
-                                {user?.name || '-'}
+                                {user?.name || "-"}
                               </td>
                               <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                                {user?.email || '-'}
+                                {user?.email || "-"}
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
@@ -696,7 +795,9 @@ export default function Users() {
                             <td colSpan="3" className="px-4 py-8 text-center">
                               <div className="flex flex-col items-center justify-center text-[#64748B]">
                                 <FiUserPlus className="w-8 h-8 text-[#E2E8F0] mb-2" />
-                                <p className="text-[13px] font-bold">No users found</p>
+                                <p className="text-[13px] font-bold">
+                                  No users found
+                                </p>
                                 <p className="text-[12px] mt-1 text-[#94A3B8]">
                                   Create a new user to get started
                                 </p>
@@ -724,12 +825,17 @@ export default function Users() {
                 <div className="flex justify-between items-center mb-4">
                   <h3
                     className={`text-lg font-semibold ${
-                      modal?.type === 'error' ? 'text-red-600' : 'text-green-600'
+                      modal?.type === "error"
+                        ? "text-red-600"
+                        : "text-green-600"
                     }`}
                   >
-                    {modal?.type === 'error' ? 'Error' : 'Success'}
+                    {modal?.type === "error" ? "Error" : "Success"}
                   </h3>
-                  <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">
+                  <button
+                    onClick={closeModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
                     ×
                   </button>
                 </div>
@@ -738,9 +844,9 @@ export default function Users() {
                   <button
                     onClick={closeModal}
                     className={`px-4 py-2 rounded text-white ${
-                      modal?.type === 'error'
-                        ? 'bg-red-500 hover:bg-red-600'
-                        : 'bg-green-500 hover:bg-green-600'
+                      modal?.type === "error"
+                        ? "bg-red-500 hover:bg-red-600"
+                        : "bg-green-500 hover:bg-green-600"
                     }`}
                   >
                     OK
@@ -754,12 +860,19 @@ export default function Users() {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-96">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">Confirm Delete</h3>
-                  <button onClick={closeDeleteModal} className="text-gray-500 hover:text-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    Confirm Delete
+                  </h3>
+                  <button
+                    onClick={closeDeleteModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
                     ×
                   </button>
                 </div>
-                <p className="text-gray-700 mb-6">Are you sure you want to delete this user?</p>
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete this user?
+                </p>
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={closeDeleteModal}
