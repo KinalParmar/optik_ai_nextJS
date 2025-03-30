@@ -129,7 +129,7 @@ export default function NewLead() {
           router?.push('/admin/users-list');
         } else {
           setLoading(false);
-          showErrorToast(res?.message);
+          // showErrorToast(res?.message);
         }
       } else {
         setLoading(false);
@@ -137,7 +137,7 @@ export default function NewLead() {
       }
     } catch (error) {
       setLoading(false);
-      showErrorToast(error?.message || 'An error occurred');
+      // showErrorToast(error?.message || 'An error occurred');
       console?.error(error);
     } finally {
       setLoading(false);

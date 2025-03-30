@@ -111,10 +111,6 @@ export default function Users() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  console.log('Search Query:', searchQuery);
-  console.log('Countries:', countries);
-  console.log('Current countryCode:', countryCode);
-
   useEffect(() => {
     const getToken = localStorage?.getItem("Admintoken");
     if (!getToken) {
@@ -441,7 +437,6 @@ export default function Users() {
                                     placeholder="Search country..."
                                     value={searchQuery}
                                     onValueChange={(value) => {
-                                      console.log('CommandInput onValueChange:', value);
                                       setSearchQuery(value || '');
                                     }}
                                     className="h-9 text-[13px]"
@@ -453,7 +448,6 @@ export default function Users() {
                                         key={country.countryCode}
                                         value={`${country.name} ${country.code}`}
                                         onSelect={() => {
-                                          console.log('CommandItem onSelect triggered with value:', country.code);
                                           setUserValue('countryCode', country.code);
                                           setFormData((prev) => ({
                                             ...prev,

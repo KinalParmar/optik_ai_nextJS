@@ -6,6 +6,7 @@ export const getAllCompany = async () => {
         const resp = await axiosInstance.get("/master-admin/tenant");
         return resp.data;
     } catch (error) {
+        showErrorToast(error?.response?.data?.message || 'An error occurred');
         console.error(error);
     }
 }

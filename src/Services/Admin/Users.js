@@ -70,7 +70,6 @@ export const getUsers = async () => {
 };
 
 export const resetUserPassword = async (userId, password) => {
-  console.log("Resetting password for user:", userId, password, axiosInstance);
   try {
     const resp = await axiosInstance.put(
       `/tenant/user/reset-pwd/${userId}`,

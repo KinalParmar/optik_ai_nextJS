@@ -230,7 +230,7 @@ export default function UsersList() {
         showErrorToast(response?.message || 'Failed to fetch leads');
       }
     } catch (error) {
-      showErrorToast(error?.response?.data?.message || 'Failed to fetch leads');
+      // showErrorToast(error?.response?.data?.message || 'Failed to fetch leads');
       console?.error('Error fetching leads:', error);
     } finally {
       setLoading(false);
