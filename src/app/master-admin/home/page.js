@@ -44,7 +44,9 @@ const companySchema = Yup.object().shape({
     .email("Email must be in a valid format")
     .required("Email is required"),
   address: Yup.string().required("Address is required"),
-  pincode: Yup.string().required("Postal code is required"),
+  pincode: Yup.string()
+    .required("Postal code is required")
+    .matches(/^[0-9]{8}$/, "Postal code must be exactly 8 digits"),
   adminName: Yup.string().required("Admin name is required"),
   adminEmail: Yup.string()
     .email("Admin email must be in a valid format")
