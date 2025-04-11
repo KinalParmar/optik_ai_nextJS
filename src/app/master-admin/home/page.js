@@ -195,6 +195,7 @@ export default function Home() {
       setShowForm(false);
     } catch (error) {
       console.error("Error submitting form:", error);
+
       setLoading(false);
     }
   };

@@ -1,50 +1,57 @@
-'use client';
-import { createNewLeadAdmin } from '@/src/Services/Admin/NewLead';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { generateSummaryLeadById, uploadLeadAdmin } from '@/src/Services/Admin/NewLead';
-import { useForm } from 'react-hook-form';
-import { showSuccessToast, showErrorToast, showMessageToast } from '@/Components/Toaster';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
-import DotLoader from '@/Components/DotLoader';
+"use client";
+import { createNewLeadAdmin } from "@/src/Services/Admin/NewLead";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  generateSummaryLeadById,
+  uploadLeadAdmin,
+} from "@/src/Services/Admin/NewLead";
+import { useForm } from "react-hook-form";
+import {
+  showSuccessToast,
+  showErrorToast,
+  showMessageToast,
+} from "@/Components/Toaster";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as Yup from "yup";
+import DotLoader from "@/Components/DotLoader";
 
 // Define Yup validation schema
 const leadSchema = Yup.object().shape({
   firstName: Yup.string()
-    .required('First Name is required')
+    .required("First Name is required")
     .trim()
-    .notOneOf([''], 'First Name cannot be empty'),
+    .notOneOf([""], "First Name cannot be empty"),
   lastName: Yup.string()
-    .required('Last Name is required')
+    .required("Last Name is required")
     .trim()
-    .notOneOf([''], 'Last Name cannot be empty'),
-  linkedinUrl: Yup.string()
-    .required('LinkedIn URL is required'),
-    // .url('Must be a valid URL')
-    // .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
-  email: Yup.string()
-    .email('Invalid email format')
-    .required('Email is required'),
+    .notOneOf([""], "Last Name cannot be empty"),
+  linkedinUrl: Yup.string().required("LinkedIn URL is required"),
+  // .url('Must be a valid URL')
+  // .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
+  email: Yup.array()
+    .of(Yup.string().email("Invalid email format"))
+    .required("Email is required"),
+  stage: Yup.string().required("Lead Stage is required"),
   jobTitle: Yup.string()
-    .required('Job Title is required')
+    .required("Job Title is required")
     .trim()
-    .notOneOf([''], 'Job Title cannot be empty'),
+    .notOneOf([""], "Job Title cannot be empty"),
   company_name: Yup.string()
-    .required('Company Name is required')
+    .required("Company Name is required")
     .trim()
-    .notOneOf([''], 'Company Name cannot be empty'),
-  company_linkedin: Yup.string()
-    .required('Company LinkedIn is required'),
-    // .url('Must be a valid URL')
-    // .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
-  phoneNumber: Yup.string()
-    .nullable()
-    .notRequired()
-    .matches(/^\+?[1-9]\d{1,14}$/, {
-      message: 'Invalid phone number format',
-      excludeEmptyString: true,
-    }),
+    .notOneOf([""], "Company Name cannot be empty"),
+  company_linkedin: Yup.string().required("Company LinkedIn is required"),
+  // .url('Must be a valid URL')
+  // .matches(/linkedin\.com/, 'Must be a LinkedIn URL'),
+  phoneNumber: Yup.array()
+    .of(
+      Yup.string().matches(/^\+?[1-9]\d{1,14}$/, {
+        message: "Invalid phone number format",
+        excludeEmptyString: true,
+      })
+    )
+    .nullable(),
   industry: Yup.string().nullable().notRequired(),
   territory: Yup.string().nullable().notRequired(),
   tenureInRole: Yup.string().nullable().notRequired(),
@@ -54,42 +61,60 @@ const leadSchema = Yup.object().shape({
 export default function NewLead() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : {};
+  const user =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user"))
+      : {};
   const leadPermissions = user?.permissions?.leads || [];
 
   // Define permission checks
-  const canCreate = leadPermissions?.includes('create');
+  const canCreate = leadPermissions?.includes("create");
+
+  const leadStages = [
+    "Meeting booked",
+    "Meeting completed",
+    "POC in Progress",
+    "Closed Won",
+    "No show / Reschedule",
+  ];
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    linkedinUrl: '',
-    email: '',
-    jobTitle: '',
-    company_name: '',
-    company_linkedin: '',
-    phoneNumber: '',
-    industry: '',
-    territory: '',
-    tenureInRole: '',
-    jobRoleDescription: '',
+    firstName: "",
+    lastName: "",
+    linkedinUrl: "",
+    email: [""],
+    jobTitle: "",
+    company_name: "",
+    company_linkedin: "",
+    phoneNumber: [""],
+    stage: "",
+    industry: "",
+    territory: "",
+    tenureInRole: "",
+    jobRoleDescription: "",
   });
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm({
     resolver: yupResolver(leadSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      linkedinUrl: '',
-      email: '',
-      jobTitle: '',
-      company_name: '',
-      company_linkedin: '',
-      phoneNumber: '',
-      industry: '',
-      territory: '',
-      tenureInRole: '',
-      jobRoleDescription: '',
+      firstName: "",
+      lastName: "",
+      linkedinUrl: "",
+      email: [""],
+      jobTitle: "",
+      company_name: "",
+      company_linkedin: "",
+      phoneNumber: [""],
+      stage: "",
+      industry: "",
+      territory: "",
+      tenureInRole: "",
+      jobRoleDescription: "",
     },
   });
 
@@ -108,14 +133,22 @@ export default function NewLead() {
   useEffect(() => {
     const getToken = localStorage?.getItem("Admintoken");
     if (!getToken) {
-      router.push('/admin-login');
+      router.push("/admin-login");
     }
-  },[])
+  }, []);
 
   const onSubmit = async (data) => {
+    // Transform data and add static arrays for API
+    const apiData = {
+      ...data,
+      email: ["test1@example.com", "test2@example.com"],
+      phoneNumber: ["+1234567890", "+9876543210"]
+    };
+
+    console.log(apiData, "Form Data for API");
     try {
       setLoading(true);
-      const response = await createNewLeadAdmin(data);
+      const response = await createNewLeadAdmin(apiData);
 
       if (response?.success) {
         setLoading(false);
@@ -126,7 +159,7 @@ export default function NewLead() {
         if (res?.success) {
           setLoading(false);
           showSuccessToast(res?.message);
-          router?.push('/admin/users-list');
+          router?.push("/admin/users-list");
         } else {
           setLoading(false);
           // showErrorToast(res?.message);
@@ -137,7 +170,6 @@ export default function NewLead() {
       }
     } catch (error) {
       setLoading(false);
-      // showErrorToast(error?.message || 'An error occurred');
       console?.error(error);
     } finally {
       setLoading(false);
@@ -150,7 +182,17 @@ export default function NewLead() {
       ...prev,
       [name]: value,
     }));
-    setValue(name, value); // Update react-hook-form values
+    setValue(name, value);
+  };
+
+  const handleArrayChange = (e, index, field) => {
+    const { value } = e?.target || {};
+    const newValue = value ? [value] : [""];
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newValue,
+    }));
+    setValue(field, newValue);
   };
 
   return (
@@ -160,7 +202,9 @@ export default function NewLead() {
       ) : (
         <section className="p-8 max-w-[1400px] mx-auto">
           <div className="mb-6">
-            <h1 className="text-[20px] font-semibold text-[#334155]">Add Leads</h1>
+            <h1 className="text-[20px] font-semibold text-[#334155]">
+              Add Leads
+            </h1>
           </div>
 
           {canCreate ? (
@@ -175,15 +219,19 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="firstName"
-                      {...register('firstName')}
+                      {...register("firstName")}
                       onChange={handleChange}
                       placeholder="Enter first name"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.firstName ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.firstName
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.firstName && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.firstName?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.firstName?.message}
+                      </p>
                     )}
                   </div>
 
@@ -195,15 +243,17 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="lastName"
-                      {...register('lastName')}
+                      {...register("lastName")}
                       onChange={handleChange}
                       placeholder="Enter last name"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.lastName ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.lastName ? "border-red-500" : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.lastName && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.lastName?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.lastName?.message}
+                      </p>
                     )}
                   </div>
 
@@ -215,15 +265,19 @@ export default function NewLead() {
                     <input
                       type="url"
                       name="linkedinUrl"
-                      {...register('linkedinUrl')}
+                      {...register("linkedinUrl")}
                       onChange={handleChange}
                       placeholder="Enter LinkedIn URL"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.linkedinUrl ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.linkedinUrl
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.linkedinUrl && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.linkedinUrl?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.linkedinUrl?.message}
+                      </p>
                     )}
                   </div>
 
@@ -232,18 +286,23 @@ export default function NewLead() {
                     <label className="block text-[13px] font-medium text-[#334155]">
                       Email <span className="text-[#FF4D4F]">*</span>
                     </label>
-                    <input
-                      type="email"
-                      name="email"
-                      {...register('email')}
-                      onChange={handleChange}
-                      placeholder="Enter email"
-                      className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.email ? 'border-red-500' : 'border-[#E2E8F0]'
-                      } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
-                    />
+                    {formData.email.map((email, index) => (
+                      <input
+                        key={index}
+                        type="email"
+                        name="email"
+                        value={email}
+                        onChange={(e) => handleArrayChange(e, index, "email")}
+                        placeholder="Enter email"
+                        className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
+                          errors?.email ? "border-red-500" : "border-[#E2E8F0]"
+                        } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
+                      />
+                    ))}
                     {errors?.email && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.email?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.email?.message}
+                      </p>
                     )}
                   </div>
 
@@ -255,15 +314,17 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="jobTitle"
-                      {...register('jobTitle')}
+                      {...register("jobTitle")}
                       onChange={handleChange}
                       placeholder="Enter job title"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.jobTitle ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.jobTitle ? "border-red-500" : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.jobTitle && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.jobTitle?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.jobTitle?.message}
+                      </p>
                     )}
                   </div>
 
@@ -275,15 +336,19 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="company_name"
-                      {...register('company_name')}
+                      {...register("company_name")}
                       onChange={handleChange}
                       placeholder="Enter company name"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.company_name ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.company_name
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.company_name && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.company_name?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.company_name?.message}
+                      </p>
                     )}
                   </div>
 
@@ -295,15 +360,19 @@ export default function NewLead() {
                     <input
                       type="url"
                       name="company_linkedin"
-                      {...register('company_linkedin')}
+                      {...register("company_linkedin")}
                       onChange={handleChange}
                       placeholder="Enter company linkedin"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.company_linkedin ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.company_linkedin
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.company_linkedin && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.company_linkedin?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.company_linkedin?.message}
+                      </p>
                     )}
                   </div>
 
@@ -312,18 +381,27 @@ export default function NewLead() {
                     <label className="block text-[13px] font-medium text-[#334155]">
                       Phone Number
                     </label>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      {...register('phoneNumber')}
-                      onChange={handleChange}
-                      placeholder="Enter Phone Number"
-                      className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.phoneNumber ? 'border-red-500' : 'border-[#E2E8F0]'
-                      } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
-                    />
+                    {formData.phoneNumber.map((phone, index) => (
+                      <input
+                        key={index}
+                        type="tel"
+                        name="phoneNumber"
+                        value={phone}
+                        onChange={(e) =>
+                          handleArrayChange(e, index, "phoneNumber")
+                        }
+                        placeholder="Enter Phone Number"
+                        className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
+                          errors?.phoneNumber
+                            ? "border-red-500"
+                            : "border-[#E2E8F0]"
+                        } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
+                      />
+                    ))}
                     {errors?.phoneNumber && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.phoneNumber?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.phoneNumber?.message}
+                      </p>
                     )}
                   </div>
 
@@ -335,15 +413,44 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="industry"
-                      {...register('industry')}
+                      {...register("industry")}
                       onChange={handleChange}
                       placeholder="Enter industry"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.industry ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.industry ? "border-red-500" : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.industry && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.industry?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.industry?.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Lead Stage */}
+                  <div className="space-y-2">
+                    <label className="block text-[13px] font-medium text-[#334155]">
+                      Lead Stage <span className="text-[#FF4D4F]">*</span>
+                    </label>
+                    <select
+                      name="stage"
+                      {...register("stage")}
+                      onChange={handleChange}
+                      className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
+                        errors?.stage ? "border-red-500" : "border-[#E2E8F0]"
+                      } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
+                    >
+                      <option value="">Select Lead Stage</option>
+                      {leadStages.map((stage) => (
+                        <option key={stage} value={stage}>
+                          {stage}
+                        </option>
+                      ))}
+                    </select>
+                    {errors?.stage && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.stage?.message}
+                      </p>
                     )}
                   </div>
 
@@ -355,15 +462,19 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="territory"
-                      {...register('territory')}
+                      {...register("territory")}
                       onChange={handleChange}
                       placeholder="Enter territory"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.territory ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.territory
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.territory && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.territory?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.territory?.message}
+                      </p>
                     )}
                   </div>
 
@@ -375,15 +486,19 @@ export default function NewLead() {
                     <input
                       type="text"
                       name="tenureInRole"
-                      {...register('tenureInRole')}
+                      {...register("tenureInRole")}
                       onChange={handleChange}
                       placeholder="Enter tenure in role"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.tenureInRole ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.tenureInRole
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     />
                     {errors?.tenureInRole && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.tenureInRole?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.tenureInRole?.message}
+                      </p>
                     )}
                   </div>
 
@@ -394,16 +509,20 @@ export default function NewLead() {
                     </label>
                     <textarea
                       name="jobRoleDescription"
-                      {...register('jobRoleDescription')}
+                      {...register("jobRoleDescription")}
                       onChange={handleChange}
                       placeholder="Enter job role description"
                       rows="3"
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
-                        errors?.jobRoleDescription ? 'border-red-500' : 'border-[#E2E8F0]'
+                        errors?.jobRoleDescription
+                          ? "border-red-500"
+                          : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B] resize-none`}
                     />
                     {errors?.jobRoleDescription && (
-                      <p className="text-red-500 text-sm mt-1">{errors?.jobRoleDescription?.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors?.jobRoleDescription?.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -414,8 +533,8 @@ export default function NewLead() {
                     disabled={!isFormValid()}
                     className={`min-w-[120px] px-6 py-2.5 text-[13px] font-medium text-white rounded-[10px] transition-all duration-200 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] ${
                       isFormValid()
-                        ? 'hover:opacity-90 cursor-pointer'
-                        : 'opacity-50 cursor-not-allowed'
+                        ? "hover:opacity-90 cursor-pointer"
+                        : "opacity-50 cursor-not-allowed"
                     }`}
                   >
                     Create Lead

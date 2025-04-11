@@ -1,5 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import axiosInstance from "@/src/Interceptor/AdminInterceptor";
+
+const dbSlug =
+  typeof window !== "undefined" ? localStorage?.getItem("dbSlug") || "" : "";
 import { FiSearch, FiEye, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { BiUpload } from "react-icons/bi";
 import { HiOutlineExternalLink } from "react-icons/hi";
@@ -443,7 +447,7 @@ export default function UsersList() {
                             : "-"}
                         </td>
                         <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                          {lead?.email || "-"}
+                          {lead?.email[0] || "-"}
                         </td>
                         <td className="px-4 py-3 text-[13px] text-[#64748B]">
                           {lead?.jobTitle || "-"}
@@ -504,7 +508,41 @@ export default function UsersList() {
                           <div className="flex items-center gap-2">
                             {canRead && (
                               <button
-                                onClick={() => setSelectedLead(lead)}
+                                onClick={async () => {
+                                  console.log("lead", lead);
+                                  try {
+                                    setLoading(true);
+                                    const response = await axiosInstance.get(
+                                      `/tenant/leads/${lead._id}`,
+                                      {
+                                        headers: {
+                                          "x-tenant": dbSlug,
+                                          "Content-Type": "application/json",
+                                        },
+                                      }
+                                    );
+                                    if (response?.data?.success) {
+                                      console.log(response.data, "response");
+                                      setSelectedLead(response.data.lead);
+                                    } else {
+                                      showErrorToast(
+                                        response?.data?.message ||
+                                          "Failed to fetch lead details"
+                                      );
+                                    }
+                                  } catch (error) {
+                                    showErrorToast(
+                                      error?.response?.data?.message ||
+                                        "Failed to fetch lead details"
+                                    );
+                                    console.error(
+                                      "Error fetching lead details:",
+                                      error
+                                    );
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }}
                                 className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
                                 title="View Details"
                                 aria-label="View lead details"
@@ -575,125 +613,296 @@ export default function UsersList() {
 
           {/* View Lead Modal */}
           {canRead && selectedLead && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg w-[600px] max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-xl font-extrabold text-[#334155]">
-                      Information
-                    </h4>
-                    <button
-                      onClick={() => setSelectedLead(null)}
-                      className="text-gray-400 hover:text-gray-600 cursor-pointer text-2xl font-bold"
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white rounded-xl w-[700px] max-h-[85vh] overflow-y-auto shadow-xl">
+                <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                  <h4 className="text-xl font-bold text-gray-900">
+                    Lead Information
+                  </h4>
+                  <button
+                    onClick={() => setSelectedLead(null)}
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      ×
-                    </button>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="mb-8">
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="bg-indigo-100 rounded-full p-3">
+                        <svg
+                          className="w-6 h-6 text-indigo-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {selectedLead?.firstName && selectedLead?.lastName
+                            ? `${selectedLead.firstName} ${selectedLead.lastName}`
+                            : "-"}
+                        </h3>
+                        <p className="text-lg text-indigo-600 font-medium">
+                          {selectedLead?.jobTitle || "-"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="mb-6">
-                    <div className="mb-4">
-                      <h3 className="text-2xl font-extrabold text-[#334155]">
-                        {selectedLead?.firstName && selectedLead?.lastName
-                          ? `${selectedLead.firstName} ${selectedLead.lastName}`
-                          : "-"}
-                      </h3>
-                      <p className="text-[#64748B] font-bold">
-                        {selectedLead?.jobTitle || "-"}
-                      </p>
+
+                  <div className="space-y-6">
+                    {/* Contact Information */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">
+                        Contact Information
+                      </h5>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Email
+                          </p>
+                          <ul className="list-disc pl-4 mt-1 space-y-1">
+                            {selectedLead?.email?.map((email, index) => (
+                              <li key={index} className="text-sm text-gray-900">
+                                {email}
+                              </li>
+                            )) || <li className="text-sm text-gray-900">-</li>}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Phone Number
+                          </p>
+                          <ul className="list-disc pl-4 mt-1 space-y-1">
+                            {selectedLead?.phoneNumber?.map((phone, index) => (
+                              <li key={index} className="text-sm text-gray-900">
+                                {phone}
+                              </li>
+                            )) || <li className="text-sm text-gray-900">-</li>}
+                          </ul>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-4">
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          First Name:
-                        </strong>{" "}
-                        {selectedLead?.firstName || "-"}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Last Name:
-                        </strong>{" "}
-                        {selectedLead?.lastName || "-"}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Email:
-                        </strong>{" "}
-                        {selectedLead?.email || "-"}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Job Title:
-                        </strong>{" "}
-                        {selectedLead?.jobTitle || "-"}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Company Name:
-                        </strong>{" "}
-                        {selectedLead?.company_name || "-"}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          Company LinkedIn:
-                        </strong>{" "}
-                        {selectedLead?.company_linkedin ? (
-                          <a
-                            href={selectedLead?.company_linkedin}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#6366F1] hover:text-[#5457E5]"
-                          >
-                            {selectedLead?.company_linkedin}
-                          </a>
-                        ) : (
-                          "-"
-                        )}
-                      </p>
-                      <p className="pb-2 border-b border-[#EEEEEE]">
-                        <strong className="text-[#334155] font-extrabold">
-                          LinkedIn:
-                        </strong>{" "}
-                        {selectedLead?.linkedinUrl ? (
-                          <a
-                            href={selectedLead?.linkedinUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#6366F1] hover:text-[#5457E5]"
-                          >
-                            {selectedLead?.linkedinUrl}
-                          </a>
-                        ) : (
-                          "-"
-                        )}
-                      </p>
-                      {/* Add other fields if they exist in the response */}
+
+                    {/* Company Information */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">
+                        Company Details
+                      </h5>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Company Name
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedLead?.company_name || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Industry
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedLead?.industry || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Territory
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedLead?.territory || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Tenure in Role
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedLead?.tenureInRole || "-"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-6">
-                      <button
-                        onClick={async () => {
-                          console.log("shabshbashb");
-                          try {
-                            setLoading(true);
-                            const res = await generateSummaryLeadById(
-                              selectedLead?._id
-                            );
-                            if (res?.success) {
-                              setLoading(false);
-                              showSuccessToast(res?.message);
-                              setSelectedLead(null);
-                              router?.push("/admin/users-list");
-                            } else {
-                              setLoading(false);
-                            }
-                          } catch (error) {
+
+                    {/* Professional Details */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">
+                        Professional Details
+                      </h5>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            Job Role Description
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedLead?.jobRoleDescription || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            LinkedIn Profiles
+                          </p>
+                          <div className="mt-1 space-y-2">
+                            <a
+                              href={selectedLead?.linkedinUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1 group"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                              </svg>
+                              <span className="group-hover:underline">
+                                Personal Profile
+                              </span>
+                            </a>
+                            <a
+                              href={selectedLead?.company_linkedin}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1 group"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                              </svg>
+                              <span className="group-hover:underline">
+                                Company Profile
+                              </span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary Section */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">
+                        Summary
+                      </h5>
+                      <div className="text-sm text-gray-900 whitespace-pre-wrap bg-white rounded p-3 border border-gray-200">
+                        {selectedLead?.summary || "-"}
+                      </div>
+                    </div>
+
+                    {/* Metadata */}
+                    <div className="bg-gray-50/50 rounded-lg p-4">
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">
+                        Metadata
+                      </h5>
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <p className="font-medium text-gray-500">
+                            Created At
+                          </p>
+                          <p className="text-gray-900 mt-1">
+                            {new Date(selectedLead?.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-500">
+                            Last Updated
+                          </p>
+                          <p className="text-gray-900 mt-1">
+                            {new Date(selectedLead?.updatedAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 border-t border-gray-100 pt-6">
+                    <button
+                      onClick={async () => {
+                        try {
+                          setLoading(true);
+                          const res = await generateSummaryLeadById(
+                            selectedLead?._id
+                          );
+                          if (res?.success) {
                             setLoading(false);
-                            console?.error(error);
+                            showSuccessToast(res?.message);
+                            setSelectedLead(null);
+                            router?.push("/admin/users-list");
+                          } else {
+                            setLoading(false);
                           }
-                        }}
-                        className="w-full bg-[#6366F1] text-white py-2 px-4 rounded-md hover:bg-[#5457E5] transition-colors duration-200"
-                      >
-                        Regenerate Summary
-                      </button>
-                    </div>
+                        } catch (error) {
+                          setLoading(false);
+                          console?.error(error);
+                        }
+                      }}
+                      className="w-full bg-indigo-600 text-white py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center justify-center gap-2 font-medium"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          <span>Regenerate Summary</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -713,9 +922,21 @@ export default function UsersList() {
                       setShowUpdateModal(false);
                       setUpdateFormData(null);
                     }}
-                    className="text-gray-400 hover:text-gray-600 cursor-pointer text-2xl font-bold"
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all"
                   >
-                    ×
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                 </div>
                 <form
