@@ -932,9 +932,19 @@ export default function UsersList() {
                       <h5 className="text-sm font-semibold text-gray-900 mb-3">
                         Summary
                       </h5>
-                      <div className="text-sm text-gray-900 whitespace-pre-wrap bg-white rounded p-3 border border-gray-200">
-                        {selectedLead?.summary || "-"}
-                      </div>
+                      <div 
+                        className="text-sm text-gray-900 bg-white rounded p-3 border border-gray-200"
+                        dangerouslySetInnerHTML={{
+                          __html: selectedLead?.summary
+                            ?.replace(/<([^>]+)>/g, '<h4 class="font-bold text-lg mt-4 mb-2">$1</h4>')
+                            .replace(/\[([^\]]+)\]:/g, '<strong class="text-indigo-600">$1:</strong>')
+                            .replace(
+                              /(https?:\/\/[^\s]+)/g,
+                              '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>'
+                            )
+                            .replace(/\n/g, '<br>') || "-"
+                        }}
+                      />
                     </div>
 
                     {/* Metadata */}
