@@ -76,6 +76,8 @@ export default function NewLead() {
     "POC in Progress",
     "Closed Won",
     "No show / Reschedule",
+    "Add New",
+    "Add Closed Lost",
   ];
 
   const [formData, setFormData] = useState({
@@ -431,19 +433,19 @@ export default function NewLead() {
                   {/* Lead Stage */}
                   <div className="space-y-2">
                     <label className="block text-[13px] font-medium text-[#334155]">
-                      Lead Stage <span className="text-[#FF4D4F]">*</span>
+                      Lead Status <span className="text-[#FF4D4F]">*</span>
                     </label>
                     <select
                       name="leadStage"
                       {...register("leadStage")}
                       onChange={handleChange}
-                      className={`w-full px-3 py-2 text-[13px] rounded-[4px] border ${
+                      className={`w-full px-3 py-2 text-[13px] rounded-[4px] uppercase border ${
                         errors?.leadStage
                           ? "border-red-500"
                           : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     >
-                      <option value="">Select Lead Stage</option>
+                      <option value="">Select Lead Status</option>
                       {leadStages.map((stage) => (
                         <option key={stage} value={stage}>
                           {stage}

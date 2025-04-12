@@ -47,8 +47,40 @@ export default function UsersList() {
 
   const permissionOptions = ["create", "read", "update", "delete"];
 
+  const leadStages = [
+    "Meeting booked",
+    "Meeting completed",
+    "POC in Progress",
+    "Closed Won",
+    "No show / Reschedule",
+    "Add New",
+    "Add Closed Lost",
+  ];
+
+  const getStageColor = (stage) => {
+    switch (stage?.toLowerCase()) {
+      case "meeting booked":
+        return "bg-blue-100 text-blue-800";
+      case "meeting completed":
+        return "bg-indigo-100 text-indigo-800";
+      case "poc in progress":
+        return "bg-purple-100 text-purple-800";
+      case "closed won":
+        return "bg-green-100 text-green-800";
+      case "no show / reschedule":
+        return "bg-orange-100 text-orange-800";
+      case "add new":
+        return "bg-gray-100 text-gray-800";
+      case "add closed lost":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   const handleEditLead = (lead) => {
     setUpdateFormData({
+      stage: lead?.stage || "",
       id: lead?._id,
       firstName: lead?.firstName || "",
       lastName: lead?.lastName || "",
@@ -134,10 +166,20 @@ export default function UsersList() {
 
   const handleUpdateFormChange = (e) => {
     const { name, value } = e?.target || {};
-    setUpdateFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    if (name === 'email' || name === 'phoneNumber') {
+      // Split by comma and trim whitespace
+      const arrayValue = value.split(',').map(item => item.trim()).filter(Boolean);
+      setUpdateFormData((prev) => ({
+        ...prev,
+        [name]: arrayValue,
+      }));
+    } else {
+      setUpdateFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleUpdateLead = async (e) => {
@@ -157,6 +199,7 @@ export default function UsersList() {
         territory: updateFormData?.territory,
         industry: updateFormData?.industry,
         jobRoleDescription: updateFormData?.jobRoleDescription,
+        stage: updateFormData?.stage,
       };
       const response = await updateLeadAdmin(
         updateFormData?.id,
@@ -667,6 +710,17 @@ export default function UsersList() {
                         </p>
                       </div>
                     </div>
+                    {selectedLead?.stage && (
+                      <div className="mt-2">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium uppercase ${getStageColor(
+                            selectedLead.stage
+                          )}`}
+                        >
+                          {selectedLead.stage}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-6">
@@ -974,9 +1028,9 @@ export default function UsersList() {
                       Email:
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       name="email"
-                      value={updateFormData?.email || ""}
+                      value={Array.isArray(updateFormData?.email) ? updateFormData.email.join(", ") : updateFormData?.email || ""}
                       onChange={handleUpdateFormChange}
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
                       required
@@ -1037,7 +1091,7 @@ export default function UsersList() {
                     <input
                       type="text"
                       name="phoneNumber"
-                      value={updateFormData?.phoneNumber || ""}
+                      value={Array.isArray(updateFormData?.phoneNumber) ? updateFormData.phoneNumber.join(", ") : updateFormData?.phoneNumber || ""}
                       onChange={handleUpdateFormChange}
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
                     />
@@ -1077,6 +1131,25 @@ export default function UsersList() {
                       onChange={handleUpdateFormChange}
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
                     />
+                  </div>
+                  <div>
+                    <label className="text-[#334155] font-extrabold">
+                      Lead Status:
+                    </label>
+                    <select
+                      name="stage"
+                      value={updateFormData?.stage || ""}
+                      onChange={handleUpdateFormChange}
+                      className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px] uppercase"
+                      required
+                    >
+                      <option value="">Select Lead Status</option>
+                      {leadStages.map((stage) => (
+                        <option key={stage} value={stage}>
+                          {stage}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-span-3">
                     <label className="text-[#334155] font-extrabold">
