@@ -84,12 +84,16 @@ export default function UsersList() {
       id: lead?._id,
       firstName: lead?.firstName || "",
       lastName: lead?.lastName || "",
-      email: Array.isArray(lead?.email) ? lead.email : [lead?.email].filter(Boolean),
+      email: Array.isArray(lead?.email)
+        ? lead.email
+        : [lead?.email].filter(Boolean),
       jobTitle: lead?.jobTitle || "",
       company_linkedin: lead?.company_linkedin || "",
       company_name: lead?.company_name || "",
       linkedinUrl: lead?.linkedinUrl || "",
-      phoneNumber: Array.isArray(lead?.phoneNumber) ? lead.phoneNumber : [lead?.phoneNumber].filter(Boolean),
+      phoneNumber: Array.isArray(lead?.phoneNumber)
+        ? lead.phoneNumber
+        : [lead?.phoneNumber].filter(Boolean),
       tenureInRole: lead?.tenureInRole || "",
       territory: lead?.territory || "",
       industry: lead?.industry || "",
@@ -495,7 +499,9 @@ export default function UsersList() {
                               : "-"}
                           </td>
                           <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                            {Array.isArray(lead?.email) ? lead.email[0] : lead?.email || "-"}
+                            {Array.isArray(lead?.email)
+                              ? lead.email[0]
+                              : lead?.email || "-"}
                           </td>
                           <td className="px-4 py-3 text-[13px] text-[#64748B]">
                             {lead?.jobTitle || "-"}
