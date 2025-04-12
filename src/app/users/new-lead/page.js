@@ -32,7 +32,7 @@ const leadSchema = Yup.object().shape({
   email: Yup.array()
     .of(Yup.string().email("Invalid email format"))
     .required("Email is required"),
-  leadStage: Yup.string().required("Lead Stage is required"),
+  stage: Yup.string(),
   jobTitle: Yup.string()
     .required("Job Title is required")
     .trim()
@@ -89,7 +89,7 @@ export default function NewLead() {
     company_name: "",
     company_linkedin: "",
     phoneNumber: [""],
-    leadStage: "",
+    stage: "",
     industry: "",
     territory: "",
     tenureInRole: "",
@@ -112,7 +112,7 @@ export default function NewLead() {
       company_name: "",
       company_linkedin: "",
       phoneNumber: [""],
-      leadStage: "",
+      stage: "",
       industry: "",
       territory: "",
       tenureInRole: "",
@@ -140,13 +140,6 @@ export default function NewLead() {
   }, []);
 
   const onSubmit = async (data) => {
-    // Transform leadStage to stage for API
-    const apiData = {
-      ...data,
-      stage: data.leadStage, // Use stage instead of leadStage
-    };
-    delete apiData.leadStage; // Remove leadStage from the payload
-
     console.log(apiData, "Form Data for API");
     try {
       setLoading(true);
@@ -433,16 +426,14 @@ export default function NewLead() {
                   {/* Lead Stage */}
                   <div className="space-y-2">
                     <label className="block text-[13px] font-medium text-[#334155]">
-                      Lead Status <span className="text-[#FF4D4F]">*</span>
+                      Lead Status
                     </label>
                     <select
-                      name="leadStage"
-                      {...register("leadStage")}
+                      name="stage"
+                      {...register("stage")}
                       onChange={handleChange}
                       className={`w-full px-3 py-2 text-[13px] rounded-[4px] uppercase border ${
-                        errors?.leadStage
-                          ? "border-red-500"
-                          : "border-[#E2E8F0]"
+                        errors?.stage ? "border-red-500" : "border-[#E2E8F0]"
                       } focus:outline-none focus:border-[#2563EB] placeholder-[#64748B]`}
                     >
                       <option value="">Select Lead Status</option>
@@ -452,9 +443,9 @@ export default function NewLead() {
                         </option>
                       ))}
                     </select>
-                    {errors?.leadStage && (
+                    {errors?.stage && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors?.leadStage?.message}
+                        {errors?.stage?.message}
                       </p>
                     )}
                   </div>

@@ -32,7 +32,7 @@ const leadSchema = Yup.object().shape({
   email: Yup.array()
     .of(Yup.string().email("Invalid email format"))
     .required("Email is required"),
-  stage: Yup.string().required("Lead Status is required"),
+  stage: Yup.string(),
   jobTitle: Yup.string()
     .required("Job Title is required")
     .trim()
@@ -140,17 +140,10 @@ export default function NewLead() {
   }, []);
 
   const onSubmit = async (data) => {
-    // Transform data and add static arrays for API
-    const apiData = {
-      ...data,
-      email: ["test1@example.com", "test2@example.com"],
-      phoneNumber: ["+1234567890", "+9876543210"],
-    };
-
-    console.log(apiData, "Form Data for API");
+    console.log(data, "Form Data for API");
     try {
       setLoading(true);
-      const response = await createNewLeadAdmin(apiData);
+      const response = await createNewLeadAdmin(data);
 
       if (response?.success) {
         setLoading(false);
@@ -432,7 +425,7 @@ export default function NewLead() {
                   {/* Lead Stage */}
                   <div className="space-y-2">
                     <label className="block text-[13px] font-medium text-[#334155]">
-                      Lead Status <span className="text-[#FF4D4F]">*</span>
+                      Lead Status
                     </label>
                     <select
                       name="stage"

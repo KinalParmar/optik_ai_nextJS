@@ -474,7 +474,7 @@ export default function UsersList() {
                       LinkedIn
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
-                      Summary
+                      Stage & Summary
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
                       Created At
@@ -542,16 +542,21 @@ export default function UsersList() {
                               "-"
                             )}
                           </td>
-                          <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                            {lead?.summary ? (
-                              <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full">
-                                <FiCheck className="w-4 h-4 text-green-600" />
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full">
-                                <FiX className="w-4 h-4 text-red-600" />
-                              </div>
-                            )}
+                          <td className="px-4 py-3 text-[13px]">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStageColor(lead?.stage)}`}>
+                                {lead?.stage || "No Stage"}
+                              </span>
+                              {lead?.summary ? (
+                                <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full">
+                                  <FiCheck className="w-4 h-4 text-green-600" />
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full">
+                                  <FiX className="w-4 h-4 text-red-600" />
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-[13px] text-[#64748B]">
                             {lead?.createdAt
