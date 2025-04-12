@@ -559,7 +559,9 @@ export default function UsersList() {
                             : "-"}
                         </td>
                         <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                          {lead?.email[0] || "-"}
+                          {Array.isArray(lead?.email)
+                            ? lead.email[0]
+                            : lead?.email || "-"}
                         </td>
                         <td className="px-4 py-3 text-[13px] text-[#64748B]">
                           {lead?.jobTitle || "-"}

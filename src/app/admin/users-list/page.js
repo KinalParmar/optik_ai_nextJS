@@ -84,12 +84,12 @@ export default function UsersList() {
       id: lead?._id,
       firstName: lead?.firstName || "",
       lastName: lead?.lastName || "",
-      email: lead?.email || "",
+      email: Array.isArray(lead?.email) ? lead.email : [lead?.email].filter(Boolean),
       jobTitle: lead?.jobTitle || "",
       company_linkedin: lead?.company_linkedin || "",
       company_name: lead?.company_name || "",
       linkedinUrl: lead?.linkedinUrl || "",
-      phoneNumber: lead?.phoneNumber || "",
+      phoneNumber: Array.isArray(lead?.phoneNumber) ? lead.phoneNumber : [lead?.phoneNumber].filter(Boolean),
       tenureInRole: lead?.tenureInRole || "",
       territory: lead?.territory || "",
       industry: lead?.industry || "",
@@ -166,10 +166,13 @@ export default function UsersList() {
 
   const handleUpdateFormChange = (e) => {
     const { name, value } = e?.target || {};
-    
-    if (name === 'email' || name === 'phoneNumber') {
+
+    if (name === "email" || name === "phoneNumber") {
       // Split by comma and trim whitespace
-      const arrayValue = value.split(',').map(item => item.trim()).filter(Boolean);
+      const arrayValue = value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
       setUpdateFormData((prev) => ({
         ...prev,
         [name]: arrayValue,
@@ -479,144 +482,147 @@ export default function UsersList() {
                 </thead>
                 <tbody>
                   {filteredLeads?.length > 0 ? (
-                    filteredLeads?.map((lead) => (
-                      <tr
-                        key={lead?._id}
-                        className="border-t border-[#E2E8F0] hover:bg-[#F8FAFF] transition-colors duration-200"
-                      >
-                        <td className="px-4 py-3 text-[13px] font-medium text-[#334155]">
-                          {lead?.firstName && lead?.lastName
-                            ? `${lead.firstName} ${lead.lastName}`
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                          {lead?.email[0] || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                          {lead?.jobTitle || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#6366F1]">
-                          {lead?.company_linkedin ? (
-                            <a
-                              href={lead?.company_linkedin}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1"
-                              aria-label={`Visit company website for ${
-                                lead?.company_name || "Company"
-                              }`}
-                            >
-                              {lead?.company_name || "Company"}{" "}
-                              <HiOutlineExternalLink className="w-3 h-3" />
-                            </a>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#6366F1]">
-                          {lead?.linkedinUrl ? (
-                            <a
-                              href={lead?.linkedinUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1"
-                              aria-label={`Visit LinkedIn profile for ${
-                                lead?.firstName || ""
-                              } ${lead?.lastName || ""}`}
-                            >
-                              LinkedIn{" "}
-                              <HiOutlineExternalLink className="w-3 h-3" />
-                            </a>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                          {lead?.summary ? (
-                            <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full">
-                              <FiCheck className="w-4 h-4 text-green-600" />
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full">
-                              <FiX className="w-4 h-4 text-red-600" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[#64748B]">
-                          {lead?.createdAt
-                            ? moment(lead?.createdAt).format("DD-MM-YYYY")
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {canRead && (
-                              <button
-                                onClick={async () => {
-                                  console.log("lead", lead);
-                                  try {
-                                    setLoading(true);
-                                    const response = await axiosInstance.get(
-                                      `/tenant/leads/${lead._id}`,
-                                      {
-                                        headers: {
-                                          "x-tenant": dbSlug,
-                                          "Content-Type": "application/json",
-                                        },
+                    filteredLeads?.map((lead) => {
+                      console.log(lead, "leaddddddddddd");
+                      return (
+                        <tr
+                          key={lead?._id}
+                          className="border-t border-[#E2E8F0] hover:bg-[#F8FAFF] transition-colors duration-200"
+                        >
+                          <td className="px-4 py-3 text-[13px] font-medium text-[#334155]">
+                            {lead?.firstName && lead?.lastName
+                              ? `${lead.firstName} ${lead.lastName}`
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                            {Array.isArray(lead?.email) ? lead.email[0] : lead?.email || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                            {lead?.jobTitle || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#6366F1]">
+                            {lead?.company_linkedin ? (
+                              <a
+                                href={lead?.company_linkedin}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1"
+                                aria-label={`Visit company website for ${
+                                  lead?.company_name || "Company"
+                                }`}
+                              >
+                                {lead?.company_name || "Company"}{" "}
+                                <HiOutlineExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#6366F1]">
+                            {lead?.linkedinUrl ? (
+                              <a
+                                href={lead?.linkedinUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1"
+                                aria-label={`Visit LinkedIn profile for ${
+                                  lead?.firstName || ""
+                                } ${lead?.lastName || ""}`}
+                              >
+                                LinkedIn{" "}
+                                <HiOutlineExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                            {lead?.summary ? (
+                              <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full">
+                                <FiCheck className="w-4 h-4 text-green-600" />
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full">
+                                <FiX className="w-4 h-4 text-red-600" />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                            {lead?.createdAt
+                              ? moment(lead?.createdAt).format("DD-MM-YYYY")
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {canRead && (
+                                <button
+                                  onClick={async () => {
+                                    console.log("lead", lead);
+                                    try {
+                                      setLoading(true);
+                                      const response = await axiosInstance.get(
+                                        `/tenant/leads/${lead._id}`,
+                                        {
+                                          headers: {
+                                            "x-tenant": dbSlug,
+                                            "Content-Type": "application/json",
+                                          },
+                                        }
+                                      );
+                                      if (response?.data?.success) {
+                                        console.log(response.data, "response");
+                                        setSelectedLead(response.data.lead);
+                                      } else {
+                                        showErrorToast(
+                                          response?.data?.message ||
+                                            "Failed to fetch lead details"
+                                        );
                                       }
-                                    );
-                                    if (response?.data?.success) {
-                                      console.log(response.data, "response");
-                                      setSelectedLead(response.data.lead);
-                                    } else {
+                                    } catch (error) {
                                       showErrorToast(
-                                        response?.data?.message ||
+                                        error?.response?.data?.message ||
                                           "Failed to fetch lead details"
                                       );
+                                      console.error(
+                                        "Error fetching lead details:",
+                                        error
+                                      );
+                                    } finally {
+                                      setLoading(false);
                                     }
-                                  } catch (error) {
-                                    showErrorToast(
-                                      error?.response?.data?.message ||
-                                        "Failed to fetch lead details"
-                                    );
-                                    console.error(
-                                      "Error fetching lead details:",
-                                      error
-                                    );
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }}
-                                className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
-                                title="View Details"
-                                aria-label="View lead details"
-                              >
-                                <FiEye className="w-4 h-4" />
-                              </button>
-                            )}
-                            {canUpdate && (
-                              <button
-                                onClick={() => handleEditLead(lead)}
-                                className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
-                                title="Edit Lead"
-                                aria-label="Edit lead"
-                              >
-                                <FiEdit2 className="w-4 h-4" />
-                              </button>
-                            )}
-                            {canDelete && (
-                              <button
-                                onClick={() => handleDeleteLead(lead)}
-                                className="p-1.5 text-[#EF4444] hover:bg-[#EF4444] hover:bg-opacity-10 rounded transition-colors duration-200"
-                                title="Delete Lead"
-                                aria-label="Delete lead"
-                              >
-                                <FiTrash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                                  }}
+                                  className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
+                                  title="View Details"
+                                  aria-label="View lead details"
+                                >
+                                  <FiEye className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canUpdate && (
+                                <button
+                                  onClick={() => handleEditLead(lead)}
+                                  className="p-1.5 text-[#6366F1] hover:bg-[#6366F1] hover:bg-opacity-10 rounded transition-colors duration-200"
+                                  title="Edit Lead"
+                                  aria-label="Edit lead"
+                                >
+                                  <FiEdit2 className="w-4 h-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteLead(lead)}
+                                  className="p-1.5 text-[#EF4444] hover:bg-[#EF4444] hover:bg-opacity-10 rounded transition-colors duration-200"
+                                  title="Delete Lead"
+                                  aria-label="Delete lead"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan="8" className="px-4 py-8 text-center">
@@ -1030,7 +1036,11 @@ export default function UsersList() {
                     <input
                       type="text"
                       name="email"
-                      value={Array.isArray(updateFormData?.email) ? updateFormData.email.join(", ") : updateFormData?.email || ""}
+                      value={
+                        Array.isArray(updateFormData?.email)
+                          ? updateFormData.email.join(", ")
+                          : updateFormData?.email || ""
+                      }
                       onChange={handleUpdateFormChange}
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
                       required
@@ -1091,7 +1101,11 @@ export default function UsersList() {
                     <input
                       type="text"
                       name="phoneNumber"
-                      value={Array.isArray(updateFormData?.phoneNumber) ? updateFormData.phoneNumber.join(", ") : updateFormData?.phoneNumber || ""}
+                      value={
+                        Array.isArray(updateFormData?.phoneNumber)
+                          ? updateFormData.phoneNumber.join(", ")
+                          : updateFormData?.phoneNumber || ""
+                      }
                       onChange={handleUpdateFormChange}
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
                     />
