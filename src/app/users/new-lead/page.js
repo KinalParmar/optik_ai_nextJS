@@ -1,6 +1,8 @@
 "use client";
 import { createNewLeadAdmin } from "@/src/Services/Admin/NewLead";
 import { useState, useEffect } from "react";
+import Select from "react-select";
+import { getUsers } from "@/src/Services/Admin/Users";
 import { useRouter } from "next/navigation";
 import {
   generateSummaryLeadById,
@@ -18,6 +20,7 @@ import DotLoader from "@/Components/DotLoader";
 
 // Define Yup validation schema
 const leadSchema = Yup.object().shape({
+  sharedTo: Yup.array().of(Yup.string()),
   firstName: Yup.string()
     .required("First Name is required")
     .trim()
@@ -80,7 +83,10 @@ export default function NewLead() {
     "Add Closed Lost",
   ];
 
-  const [formData, setFormData] = useState({
+  const [users, setUsers] = useState([]);
+const [selectedUsers, setSelectedUsers] = useState([]);
+
+const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     linkedinUrl: "",
@@ -137,9 +143,29 @@ export default function NewLead() {
     if (!getToken) {
       router.push("/login");
     }
+
+    const fetchUsers = async () => {
+      try {
+        const data = await getUsers();
+        const formattedUsers = data.map(user => ({
+          value: user.id,
+          label: `${user.name} (${user.email})`
+        }));
+        setUsers(formattedUsers);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        showErrorToast('Failed to fetch users');
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   const onSubmit = async (data) => {
+    const apiData = {
+      ...data,
+      sharedTo: selectedUsers.map(user => user.value)
+    };
     console.log(apiData, "Form Data for API");
     try {
       setLoading(true);
@@ -370,6 +396,21 @@ export default function NewLead() {
                         {errors?.company_linkedin?.message}
                       </p>
                     )}
+                  </div>
+
+                  {/* Share with Users */}
+                  <div className="space-y-2">
+                    <label className="block text-[13px] font-medium text-[#334155]">
+                      Share with Users
+                    </label>
+                    <Select
+                      isMulti
+                      options={users}
+                      value={selectedUsers}
+                      onChange={setSelectedUsers}
+                      className="text-[13px]"
+                      placeholder="Select users to share with"
+                    />
                   </div>
 
                   {/* Phone Number */}

@@ -13,20 +13,32 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
-const sidebarItems = [
+const adminSidebarItems = [
   { title: 'Leads', link: '/admin/users-list', icon: HiOutlineUserGroup, permissionKey: 'leads' },
   { title: 'New Lead', link: '/admin/new-lead', icon: FiUserPlus, permissionKey: 'newleads' },
   { title: 'User', link: '/admin/users', icon: HiOutlineUserGroup, permissionKey: 'users' },
 ];
 
+const userSidebarItems = [
+  { title: 'Leads', link: '/users/users-list', icon: HiOutlineUserGroup, permissionKey: 'leads' },
+  { title: 'New Lead', link: '/users/new-lead', icon: FiUserPlus, permissionKey: 'newleads' },
+];
+
+const getSidebarItems = (role) => {
+  return role === 'admin' ? adminSidebarItems : userSidebarItems;
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [userData, setUserData] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('user');
+      const storedRole = localStorage.getItem('role');
       setUserData(storedUser ? JSON.parse(storedUser) : {});
+      setUserRole(storedRole ? JSON.parse(storedRole) : null);
     }
   }, []);
 
@@ -40,7 +52,8 @@ export default function Sidebar() {
     return Array.isArray(permissionArray) && permissionArray.includes('read');
   };
 
-  // Filter sidebar items based on permissions
+  // Get sidebar items based on role and filter based on permissions
+  const sidebarItems = getSidebarItems(userRole);
   const filteredSidebarItems = sidebarItems.filter((item) => {
     const permissionArray = permissions?.[item?.permissionKey] || [];
 

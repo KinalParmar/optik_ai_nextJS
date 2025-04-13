@@ -74,9 +74,11 @@ export default function AdminLogin() {
 
       const response = await Login?.Loginapi(data);
       if (response?.success) {
-        const { user, token } = response;
+        const { user, token, role } = response;
         localStorage?.setItem("Admintoken", token);
         localStorage?.setItem("user", JSON.stringify(user));
+        localStorage?.setItem("role", JSON.stringify(role));
+
         // const passwordResetStatus = await checkPasswordResetRequired();
         // if (passwordResetStatus?.resetPwd) {
         // setShowPasswordModal(true);

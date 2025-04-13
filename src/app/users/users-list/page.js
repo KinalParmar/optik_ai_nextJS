@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { FiSearch, FiEye, FiEdit2, FiTrash2 } from "react-icons/fi";
+import Select from "react-select";
+import { getUsers } from "@/src/Services/Admin/Users";
 import axiosInstance from "@/src/Interceptor/AdminInterceptor";
 
 import { BiUpload } from "react-icons/bi";
@@ -55,6 +57,8 @@ export default function UsersList() {
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const router = useRouter();
 
   const {
@@ -110,6 +114,15 @@ export default function UsersList() {
   const permissionOptions = ["create", "read", "update", "delete"];
 
   const handleEditLead = (lead) => {
+    // Set selected users based on lead's sharedTo
+    if (lead.sharedTo && lead.sharedTo.length > 0) {
+      const selectedUserOptions = users.filter((user) =>
+        lead.sharedTo.includes(user.value)
+      );
+      setSelectedUsers(selectedUserOptions);
+    } else {
+      setSelectedUsers([]);
+    }
     setUpdateFormData({
       stage: lead?.stage || "",
       id: lead?._id,
@@ -219,8 +232,13 @@ export default function UsersList() {
   const handleUpdateLead = async (e) => {
     e.preventDefault();
     try {
+      const formDataWithSharedTo = {
+        ...updateFormData,
+        sharedTo: selectedUsers.map((user) => user.value),
+      };
       setLoading(true);
       const updatedLeadData = {
+        ...formDataWithSharedTo,
         firstName: updateFormData?.firstName,
         lastName: updateFormData?.lastName,
         email: updateFormData?.email,
@@ -321,6 +339,23 @@ export default function UsersList() {
       allLeads();
     }
   }, [canRead]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getUsers();
+        const formattedUsers = data.map((user) => ({
+          value: user.id,
+          label: `${user.name} (${user.email})`,
+        }));
+        setUsers(formattedUsers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        showErrorToast("Failed to fetch users");
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const allLeads = async () => {
     try {
@@ -604,7 +639,11 @@ export default function UsersList() {
                         </td>
                         <td className="px-4 py-3 text-[13px]">
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStageColor(lead?.stage)}`}>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStageColor(
+                                lead?.stage
+                              )}`}
+                            >
                               {lead?.stage || "No Stage"}
                             </span>
                             {lead?.summary ? (
@@ -937,17 +976,24 @@ export default function UsersList() {
                       <h5 className="text-sm font-semibold text-gray-900 mb-3">
                         Summary
                       </h5>
-                      <div 
+                      <div
                         className="text-sm text-gray-900 bg-white rounded p-3 border border-gray-200"
                         dangerouslySetInnerHTML={{
-                          __html: selectedLead?.summary
-                            ?.replace(/<([^>]+)>/g, '<h4 class="font-bold text-lg mt-4 mb-2">$1</h4>')
-                            .replace(/\[([^\]]+)\]:/g, '<strong class="text-indigo-600">$1:</strong>')
-                            .replace(
-                              /(https?:\/\/[^\s]+)/g,
-                              '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>'
-                            )
-                            .replace(/\n/g, '<br>') || "-"
+                          __html:
+                            selectedLead?.summary
+                              ?.replace(
+                                /<([^>]+)>/g,
+                                '<h4 class="font-bold text-lg mt-4 mb-2">$1</h4>'
+                              )
+                              .replace(
+                                /\[([^\]]+)\]:/g,
+                                '<strong class="text-indigo-600">$1:</strong>'
+                              )
+                              .replace(
+                                /(https?:\/\/[^\s]+)/g,
+                                '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>'
+                              )
+                              .replace(/\n/g, "<br>") || "-",
                         }}
                       />
                     </div>
@@ -1215,6 +1261,21 @@ export default function UsersList() {
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
                     />
                   </div>
+
+                  <div>
+                    <label className="text-[#334155] font-extrabold">
+                      Share with Users:
+                    </label>
+                    <Select
+                      isMulti
+                      options={users}
+                      value={selectedUsers}
+                      onChange={setSelectedUsers}
+                      className="text-[13px]"
+                      placeholder="Select users to share with"
+                    />
+                  </div>
+
                   <div>
                     <label className="text-[#334155] font-extrabold">
                       Lead Status:

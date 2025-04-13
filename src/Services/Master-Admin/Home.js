@@ -1,5 +1,5 @@
 import axiosInstance from "@/src/Interceptor/Interceptor";
-import { showErrorToast } from "@/Components/Toaster";
+import { showErrorToast, showSuccessToast } from "@/Components/Toaster";
 
 export const getAllCompany = async () => {
   try {
@@ -32,11 +32,15 @@ export const createNewCompany = async (formData) => {
 };
 
 export const updateCompany = async (id, companyData) => {
+  console.log("q1234543232454");
   try {
     const resp = await axiosInstance.put(
       `/master-admin/tenant/${id}`,
       companyData
     );
+    console.log(resp?.data?.message, "resp?.data?.message");
+    showSuccessToast(resp?.data?.message);
+
     return resp.data;
   } catch (error) {
     console.log(error?.response);

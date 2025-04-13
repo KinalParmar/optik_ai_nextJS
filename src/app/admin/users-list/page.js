@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/src/Interceptor/AdminInterceptor";
+import Select from "react-select";
+import { getUsers } from "@/src/Services/Admin/Users";
 
 const dbSlug =
   typeof window !== "undefined" ? localStorage?.getItem("dbSlug") || "" : "";
@@ -33,6 +35,8 @@ export default function UsersList() {
   const [rolesFormData, setRolesFormData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const router = useRouter();
 
   const user =
@@ -79,6 +83,13 @@ export default function UsersList() {
   };
 
   const handleEditLead = (lead) => {
+    // Set selected users based on lead's sharedTo
+    if (lead.sharedTo && lead.sharedTo.length > 0) {
+      const selectedUserOptions = users.filter(user => lead.sharedTo.includes(user.value));
+      setSelectedUsers(selectedUserOptions);
+    } else {
+      setSelectedUsers([]);
+    }
     setUpdateFormData({
       stage: lead?.stage || "",
       id: lead?._id,
@@ -207,6 +218,7 @@ export default function UsersList() {
         industry: updateFormData?.industry,
         jobRoleDescription: updateFormData?.jobRoleDescription,
         stage: updateFormData?.stage,
+        sharedTo: selectedUsers.map(user => user.value),
       };
       const response = await updateLeadAdmin(
         updateFormData?.id,
@@ -294,6 +306,23 @@ export default function UsersList() {
       allLeads();
     }
   }, [canRead]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getUsers();
+        const formattedUsers = data.map(user => ({
+          value: user.id,
+          label: `${user.name} (${user.email})`
+        }));
+        setUsers(formattedUsers);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        showErrorToast('Failed to fetch users');
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const allLeads = async () => {
     try {
@@ -1165,6 +1194,20 @@ export default function UsersList() {
                       value={updateFormData?.industry || ""}
                       onChange={handleUpdateFormChange}
                       className="w-full mt-1 px-3 py-2 border border-[#E2E8F0] rounded focus:outline-none focus:border-[#6366F1] text-[13px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[#334155] font-extrabold">
+                      Share with Users:
+                    </label>
+                    <Select
+                      isMulti
+                      options={users}
+                      value={selectedUsers}
+                      onChange={setSelectedUsers}
+                      className="text-[13px]"
+                      placeholder="Select users to share with"
                     />
                   </div>
                   <div>
