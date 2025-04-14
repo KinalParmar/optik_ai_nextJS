@@ -561,6 +561,9 @@ export default function UsersList() {
                       Email
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                      Phone Number
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
                       Job Title
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
@@ -596,6 +599,11 @@ export default function UsersList() {
                           {Array.isArray(lead?.email)
                             ? lead.email[0]
                             : lead?.email || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                          {Array.isArray(lead?.phoneNumber)
+                            ? lead.phoneNumber[0]
+                            : lead?.phoneNumber || "-"}
                         </td>
                         <td className="px-4 py-3 text-[13px] text-[#64748B]">
                           {lead?.jobTitle || "-"}

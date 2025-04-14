@@ -85,7 +85,9 @@ export default function UsersList() {
   const handleEditLead = (lead) => {
     // Set selected users based on lead's sharedTo
     if (lead.sharedTo && lead.sharedTo.length > 0) {
-      const selectedUserOptions = users.filter(user => lead.sharedTo.includes(user.value));
+      const selectedUserOptions = users.filter((user) =>
+        lead.sharedTo.includes(user.value)
+      );
       setSelectedUsers(selectedUserOptions);
     } else {
       setSelectedUsers([]);
@@ -218,7 +220,7 @@ export default function UsersList() {
         industry: updateFormData?.industry,
         jobRoleDescription: updateFormData?.jobRoleDescription,
         stage: updateFormData?.stage,
-        sharedTo: selectedUsers.map(user => user.value),
+        sharedTo: selectedUsers.map((user) => user.value),
       };
       const response = await updateLeadAdmin(
         updateFormData?.id,
@@ -301,6 +303,8 @@ export default function UsersList() {
         lead?.email?.toLowerCase()?.includes(searchTerm?.toLowerCase())
     ) || [];
 
+  console.log(filteredLeads);
+
   useEffect(() => {
     if (canRead) {
       allLeads();
@@ -311,14 +315,14 @@ export default function UsersList() {
     const fetchUsers = async () => {
       try {
         const data = await getUsers();
-        const formattedUsers = data.map(user => ({
+        const formattedUsers = data.map((user) => ({
           value: user.id,
-          label: `${user.name} (${user.email})`
+          label: `${user.name} (${user.email})`,
         }));
         setUsers(formattedUsers);
       } catch (error) {
-        console.error('Error fetching users:', error);
-        showErrorToast('Failed to fetch users');
+        console.error("Error fetching users:", error);
+        showErrorToast("Failed to fetch users");
       }
     };
     fetchUsers();
@@ -494,6 +498,9 @@ export default function UsersList() {
                       Email
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                      Phone number
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
                       Job Title
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
@@ -531,6 +538,11 @@ export default function UsersList() {
                             {Array.isArray(lead?.email)
                               ? lead.email[0]
                               : lead?.email || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                            {Array.isArray(lead?.phoneNumber)
+                              ? lead.phoneNumber[0]
+                              : lead?.phoneNumber || "-"}
                           </td>
                           <td className="px-4 py-3 text-[13px] text-[#64748B]">
                             {lead?.jobTitle || "-"}
@@ -573,7 +585,11 @@ export default function UsersList() {
                           </td>
                           <td className="px-4 py-3 text-[13px]">
                             <div className="flex items-center gap-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStageColor(lead?.stage)}`}>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStageColor(
+                                  lead?.stage
+                                )}`}
+                              >
                                 {lead?.stage || "No Stage"}
                               </span>
                               {lead?.summary ? (
@@ -907,17 +923,24 @@ export default function UsersList() {
                       <h5 className="text-sm font-semibold text-gray-900 mb-3">
                         Summary
                       </h5>
-                      <div 
+                      <div
                         className="text-sm text-gray-900 bg-white rounded p-3 border border-gray-200"
                         dangerouslySetInnerHTML={{
-                          __html: selectedLead?.summary
-                            ?.replace(/<([^>]+)>/g, '<h4 class="font-bold text-lg mt-4 mb-2">$1</h4>')
-                            .replace(/\[([^\]]+)\]:/g, '<strong class="text-indigo-600">$1:</strong>')
-                            .replace(
-                              /(https?:\/\/[^\s]+)/g,
-                              '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>'
-                            )
-                            .replace(/\n/g, '<br>') || "-"
+                          __html:
+                            selectedLead?.summary
+                              ?.replace(
+                                /<([^>]+)>/g,
+                                '<h4 class="font-bold text-lg mt-4 mb-2">$1</h4>'
+                              )
+                              .replace(
+                                /\[([^\]]+)\]:/g,
+                                '<strong class="text-indigo-600">$1:</strong>'
+                              )
+                              .replace(
+                                /(https?:\/\/[^\s]+)/g,
+                                '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>'
+                              )
+                              .replace(/\n/g, "<br>") || "-",
                         }}
                       />
                     </div>
