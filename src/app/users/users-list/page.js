@@ -114,7 +114,6 @@ export default function UsersList() {
   const permissionOptions = ["create", "read", "update", "delete"];
 
   const handleEditLead = (lead) => {
-    // Set selected users based on lead's sharedTo
     if (lead.sharedTo && lead.sharedTo.length > 0) {
       const selectedUserOptions = users.filter((user) =>
         lead.sharedTo.includes(user.value)
