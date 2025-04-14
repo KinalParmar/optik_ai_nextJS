@@ -570,7 +570,7 @@ export default function UsersList() {
                       LinkedIn
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
-                      Stage & Summary
+                      Lead Status
                     </th>
                     <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
                       Created At
