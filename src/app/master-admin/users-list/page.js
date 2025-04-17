@@ -1,20 +1,24 @@
-'use client';
-import { useEffect, useState, useRef } from 'react';
-import { FiSearch, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import { BiUpload } from 'react-icons/bi';
-import { FiArrowLeft } from 'react-icons/fi';
-import { getAllLead, generateSummary, deleteLead, uploadCSV } from '@/src/Services/Master-Admin/Lead';
-import { useRouter } from 'next/navigation';
+"use client";
+import { useEffect, useState, useRef } from "react";
+import { FiSearch, FiEye, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { BiUpload } from "react-icons/bi";
+import { FiArrowLeft } from "react-icons/fi";
+import {
+  getAllLead,
+  generateSummary,
+  deleteLead,
+  uploadCSV,
+} from "@/src/Services/Master-Admin/Lead";
+import { useRouter } from "next/navigation";
 import { FaExternalLinkAlt } from "react-icons/fa";
 
 export default function UsersList() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedLead, setSelectedLead] = useState(null);
   const [showRoles, setShowRoles] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
   const [leads, setLeads] = useState([]);
-  
 
   const fileInputRef = useRef(null);
 
@@ -31,70 +35,74 @@ export default function UsersList() {
   useEffect(() => {
     const getToken = localStorage?.getItem("token");
     if (!getToken) {
-      router.push('/master-admin-login');
+      router.push("/master-admin-login");
     }
-  },[])
+  }, []);
 
   const handleEdit = (lead) => {
     // Navigate to NewLead page with lead data
-    router.push('/master-admin/new-lead', { state: { lead } });
+    router.push("/master-admin/new-lead", { state: { lead } });
   };
 
   const handleDeleteLead = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this lead?')) return;
+    if (!window.confirm("Are you sure you want to delete this lead?")) return;
     try {
       await deleteLead(id);
-      setLeads(leads.filter(lead => lead.id !== id));
+      setLeads(leads.filter((lead) => lead.id !== id));
       if (selectedLead?.id === id) setSelectedLead(null);
     } catch (error) {
-      console.error('Failed to delete lead!');
+      console.error("Failed to delete lead!");
     }
   };
 
   const handleGenerateSummary = async (id) => {
     try {
       const response = await generateSummary(id);
-      setLeads(leads.map(lead =>
-        lead.id === id ? { ...lead, summary: response.data.summary } : lead
-      ));
-      if (selectedLead?.id === id) setSelectedLead({ ...selectedLead, summary: response.data.summary });
+      setLeads(
+        leads.map((lead) =>
+          lead.id === id ? { ...lead, summary: response.data.summary } : lead
+        )
+      );
+      if (selectedLead?.id === id)
+        setSelectedLead({ ...selectedLead, summary: response.data.summary });
     } catch (error) {
-      console.error('Failed to regenerate summary!');
+      console.error("Failed to regenerate summary!");
     }
   };
 
   const handleFileUpload = async (event) => {
     const input = event.target;
     if (!input.files?.length) {
-      console.error('Please select a valid file!');
+      console.error("Please select a valid file!");
       return;
     }
 
     const file = input.files[0];
-    input.value = ''; // Reset input
+    input.value = ""; // Reset input
 
-    const fileType = file.type.split('/');
-    if (fileType[0] !== 'text' || !['csv'].includes(fileType[1])) {
-      console.error('Please select a valid CSV file!');
+    const fileType = file.type.split("/");
+    if (fileType[0] !== "text" || !["csv"].includes(fileType[1])) {
+      console.error("Please select a valid CSV file!");
       return;
     }
 
-    if (!window.confirm('Are you sure you want to upload?')) return;
+    if (!window.confirm("Are you sure you want to upload?")) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
       const response = await uploadCSV(formData);
       await getAllLeadDetails(); // Refresh leads
     } catch (error) {
-      console.error('Failed to upload CSV!');
+      console.error("Failed to upload CSV!");
     }
   };
 
-  const filteredLeads = leads.filter(lead =>
-    lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredLeads = leads.filter(
+    (lead) =>
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   useEffect(() => {
@@ -106,14 +114,16 @@ export default function UsersList() {
       const response = await getAllLead();
       setLeads(response.data);
     } catch (error) {
-      console.error('Error fetching leads!');
+      console.error("Error fetching leads!");
     }
   };
 
   return (
     <section className="px-8 py-6 max-w-[1400px] mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-[20px] font-bold text-[#334155]">Lead Management</h1>
+        <h1 className="text-[20px] font-bold text-[#334155]">
+          Lead Management
+        </h1>
 
         <div className="flex items-center gap-2.5">
           <div className="relative">
@@ -145,7 +155,7 @@ export default function UsersList() {
           </div>
 
           <button
-            onClick={() => navigate('/new-lead')}
+            onClick={() => navigate("/new-lead")}
             className="px-3 py-[7px] rounded-[4px] bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white hover:opacity-90 transition-all duration-200 text-[13px] font-bold"
           >
             Add New Lead
@@ -161,35 +171,72 @@ export default function UsersList() {
         <table className="w-full">
           <thead className="bg-[#DDDAFA]">
             <tr>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Name</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Email</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Job Title</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Company</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">LinkedIn</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Summary</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Created At</th>
-              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">Actions</th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Email
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Job Title
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Company
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                LinkedIn
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Summary
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-4 py-2.5 text-left text-[13px] font-bold text-[black] uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredLeads.length > 0 ? (
-              filteredLeads.map(lead => (
-                <tr key={lead.id} className="border-t border-[#E2E8F0] hover:bg-[#F8FAFF] transition-colors duration-200">
-                  <td className="px-4 py-3 text-[13px] font-medium text-[#334155]">{lead.name}</td>
-                  <td className="px-4 py-3 text-[13px] text-[#64748B]">{lead.email}</td>
-                  <td className="px-4 py-3 text-[13px] text-[#64748B]">{lead.jobTitle}</td>
+              filteredLeads.map((lead) => (
+                <tr
+                  key={lead.id}
+                  className="border-t border-[#E2E8F0] hover:bg-[#F8FAFF] transition-colors duration-200"
+                >
+                  <td className="px-4 py-3 text-[13px] font-medium text-[#334155]">
+                    {lead.name}
+                  </td>
+                  <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                    {lead.email}
+                  </td>
+                  <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                    {lead.jobTitle}
+                  </td>
                   <td className="px-4 py-3 text-[13px] text-[#6366F1]">
-                    <a href={lead.company} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={lead.company}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <FaExternalLinkAlt />
                     </a>
                   </td>
                   <td className="px-4 py-3 text-[13px] text-[#6366F1]">
-                    <a href={lead.linkedin} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={lead.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <FaExternalLinkAlt />
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-[#64748B]">{lead.summary}</td>
-                  <td className="px-4 py-3 text-[13px] text-[#64748B]">{lead.createdAt}</td>
+                  <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                    {lead.summary}
+                  </td>
+                  <td className="px-4 py-3 text-[13px] text-[#64748B]">
+                    {lead.createdAt}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button
@@ -228,11 +275,22 @@ export default function UsersList() {
               <tr>
                 <td colSpan="8" className="px-4 py-8 text-center">
                   <div className="flex flex-col items-center justify-center text-[#64748B]">
-                    <svg width="48" height="31" viewBox="0 0 64 41" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M5.33333 0C2.388 0 0 2.388 0 5.33333V34.6667C0 37.612 2.388 40 5.33333 40H58.6667C61.612 40 64 37.612 64 34.6667V5.33333C64 2.388 61.612 0 58.6667 0H5.33333ZM5.33333 5.33333H58.6667V34.6667H5.33333V5.33333ZM13.3333 10.6667V16H18.6667V10.6667H13.3333ZM24 10.6667V16H29.3333V10.6667H24ZM34.6667 10.6667V16H40V10.6667H34.6667ZM13.3333 21.3333V26.6667H18.6667V21.3333H13.3333ZM24 21.3333V26.6667H29.3333V21.3333H24ZM34.6667 21.3333V26.6667H40V21.3333H34.6667Z" fill="#E2E8F0" />
+                    <svg
+                      width="48"
+                      height="31"
+                      viewBox="0 0 64 41"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M5.33333 0C2.388 0 0 2.388 0 5.33333V34.6667C0 37.612 2.388 40 5.33333 40H58.6667C61.612 40 64 37.612 64 34.6667V5.33333C64 2.388 61.612 0 58.6667 0H5.33333ZM5.33333 5.33333H58.6667V34.6667H5.33333V5.33333ZM13.3333 10.6667V16H18.6667V10.6667H13.3333ZM24 10.6667V16H29.3333V10.6667H24ZM34.6667 10.6667V16H40V10.6667H34.6667ZM13.3333 21.3333V26.6667H18.6667V21.3333H13.3333ZM24 21.3333V26.6667H29.3333V21.3333H24ZM34.6667 21.3333V26.6667H40V21.3333H34.6667Z"
+                        fill="#E2E8F0"
+                      />
                     </svg>
                     <p className="mt-3 text-[13px] font-bold">No leads found</p>
-                    <p className="text-[11px] mt-1 font-bold">Upload leads using CSV or add them manually</p>
+                    <p className="text-[11px] mt-1 font-bold">
+                      Upload leads using CSV or add them manually
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -261,49 +319,81 @@ export default function UsersList() {
                   <h3 className="text-2xl font-extrabold text-[#334155]">
                     {selectedLead.name}
                   </h3>
-                  <p className="text-[#64748B] font-bold">{selectedLead.jobTitle}</p>
+                  <p className="text-[#64748B] font-bold">
+                    {selectedLead.jobTitle}
+                  </p>
                 </div>
 
                 <div className="space-y-4">
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Company:</strong>{' '}
-                    <a href={selectedLead.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#6366F1] hover:text-[#5457E5]">
-                      {selectedLead.company || '-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Company:
+                    </strong>{" "}
+                    <a
+                      href={selectedLead.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#6366F1] hover:text-[#5457E5]"
+                    >
+                      {selectedLead.company || "-"}
                     </a>
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Email:</strong>{' '}
-                    {selectedLead.email || '-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Email:
+                    </strong>{" "}
+                    {selectedLead.email || "-"}
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Industry:</strong>{' '}
-                    {selectedLead.jobTitle || '-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Industry:
+                    </strong>{" "}
+                    {selectedLead.jobTitle || "-"}
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Job Role Description:</strong>{' '}
-                    {selectedLead.summary || '-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Job Role Description:
+                    </strong>{" "}
+                    {selectedLead.summary || "-"}
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">LinkedIn:</strong>{' '}
-                    <a href={selectedLead.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#6366F1] hover:text-[#5457E5]">
-                      {selectedLead.linkedin || '-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      LinkedIn:
+                    </strong>{" "}
+                    <a
+                      href={selectedLead.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#6366F1] hover:text-[#5457E5]"
+                    >
+                      {selectedLead.linkedin || "-"}
                     </a>
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Phone Number:</strong>{' '}
-                    {'-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Phone Number:
+                    </strong>{" "}
+                    {"-"}
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Tenure In Role:</strong>{' '}
-                    {'-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Tenure In Role:
+                    </strong>{" "}
+                    {"-"}
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Territory:</strong>{' '}
-                    {'-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Territory:
+                    </strong>{" "}
+                    {"-"}
                   </p>
                   <div className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Summary:</strong>
-                    <p className="mt-2 whitespace-pre-wrap">{selectedLead.summary || '-'}</p>
+                    <strong className="text-[#334155] font-extrabold">
+                      Summary:
+                    </strong>
+                    <p className="mt-2 whitespace-pre-wrap">
+                      {selectedLead.summary || "-"}
+                    </p>
                     <button
                       className="mt-4 px-4 py-2 bg-gradient-to-r from-[#8B5CF6] to-[#3B82F6] text-white rounded hover:opacity-90 transition-all duration-200 text-sm font-bold"
                       onClick={() => handleGenerateSummary(selectedLead.id)}
@@ -312,12 +402,16 @@ export default function UsersList() {
                     </button>
                   </div>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Created At:</strong>{' '}
+                    <strong className="text-[#334155] font-extrabold">
+                      Created At:
+                    </strong>{" "}
                     {selectedLead.createdAt}
                   </p>
                   <p className="pb-2 border-b border-[#EEEEEE]">
-                    <strong className="text-[#334155] font-extrabold">Updated At:</strong>{' '}
-                    {'-'}
+                    <strong className="text-[#334155] font-extrabold">
+                      Updated At:
+                    </strong>{" "}
+                    {"-"}
                   </p>
                 </div>
               </div>
@@ -337,7 +431,9 @@ export default function UsersList() {
               >
                 <FiArrowLeft className="w-5 h-5 text-gray-500" />
               </button>
-              <h2 className="text-xl font-semibold text-gray-700">Lead Roles</h2>
+              <h2 className="text-xl font-semibold text-gray-700">
+                Lead Roles
+              </h2>
             </div>
 
             <form className="space-y-4">
@@ -353,10 +449,13 @@ export default function UsersList() {
                     id={name}
                     name={name}
                     checked={false}
-                    onChange={() => { }}
+                    onChange={() => {}}
                     className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
                   />
-                  <label htmlFor={name} className="text-sm font-medium text-gray-700 cursor-pointer">
+                  <label
+                    htmlFor={name}
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
                     {label}
                   </label>
                 </div>
