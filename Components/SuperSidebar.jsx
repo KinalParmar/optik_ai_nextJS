@@ -20,6 +20,7 @@ const sidebarItems = [
   // { title: 'Leads', link: '/master-admin/users-list', icon: HiOutlineUserGroup },
   // { title: 'New Lead', link: '/master-admin/new-lead', icon: FiUserPlus },
   { title: 'User', link: '/master-admin/users', icon: HiOutlineUserGroup },
+  { title: 'Blog', link: '/master-admin/blog', icon: HiOutlineUserGroup },
 ];
 
 export default function Sidebar() {
