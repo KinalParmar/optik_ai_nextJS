@@ -7,7 +7,6 @@ export const getAllBLog = async () => {
     const resp = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}blog`);
     return resp.data;
   } catch (error) {
-    debugger;
     showErrorToast(
       error?.response?.data?.message || error?.message || "An error occurred"
     );

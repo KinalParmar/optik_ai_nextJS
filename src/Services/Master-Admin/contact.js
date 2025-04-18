@@ -7,7 +7,6 @@ export const getAllContact = async () => {
     const resp = await axiosInstance.get(`/contact`);
     return resp.data;
   } catch (error) {
-    debugger;
     showErrorToast(
       error?.response?.data?.message || error?.message || "An error occurred"
     );

@@ -110,7 +110,6 @@ export default function Webinar() {
     try {
       setLoading(true);
       const response = await getAllWebinars();
-      debugger;
       if (response) {
         setWebinars(response || []);
         showSuccessToast(response?.message || "Webinars loaded successfully");
@@ -190,7 +189,6 @@ export default function Webinar() {
         imageUrl: addFormData.imageUrl,
       };
       const response = await createWebinar(newWebinarData);
-      debugger;
       if (response) {
         fetchWebinars();
         showSuccessToast("Webinar created successfully");
@@ -388,7 +386,6 @@ export default function Webinar() {
                                   webinar._id
                                 );
                                 if (response) {
-                                  debugger;
                                   setSelectedWebinar(response);
                                 } else {
                                   showErrorToast(
