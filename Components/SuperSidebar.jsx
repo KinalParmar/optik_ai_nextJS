@@ -7,6 +7,7 @@ import { HiOutlineUserGroup } from "react-icons/hi";
 import { FiUserPlus } from "react-icons/fi";
 import { FiPenTool } from "react-icons/fi"; // Icon for Blog
 import { FiMail } from "react-icons/fi"; // Icon for Contact
+import { FiVideo } from "react-icons/fi";
 
 // Import Poppins font from Google Fonts
 import { Poppins } from "next/font/google";
@@ -24,6 +25,7 @@ const sidebarItems = [
   { title: "User", link: "/master-admin/users", icon: HiOutlineUserGroup },
   { title: "Blog", link: "/master-admin/blog", icon: FiPenTool }, // Updated icon
   { title: "Contact", link: "/master-admin/contact", icon: FiMail }, // Updated icon
+  { title: "Webinar", link: "/master-admin/webinar", icon: FiVideo },
 ];
 
 export default function Sidebar() {
